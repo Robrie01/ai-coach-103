@@ -38,6 +38,14 @@ if not st.session_state.authenticated:
         st.error("❌ Invalid username or password.")
     st.stop()
 
+# ------------------ LOGOUT ------------------
+if st.session_state.get("authenticated", False):
+    with st.sidebar:
+        if st.button("🚪 Logout"):
+            st.session_state.authenticated = False
+            st.session_state.login_attempted = False
+            st.experimental_rerun()
+            
 # ------------------ SETUP ------------------
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
