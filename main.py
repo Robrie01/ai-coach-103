@@ -3,12 +3,12 @@ st.set_page_config(page_title="AI Interview Assistant", layout="centered")
 
 import openai
 import json
-from fpdf import FPDF
 import datetime
 import os
 import pathlib
 import requests
 import base64
+from fpdf import FPDF
 
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
@@ -22,7 +22,7 @@ if "login_attempted" not in st.session_state:
     st.session_state.login_attempted = False
 
 if not st.session_state.authenticated:
-    st.title("\U0001F512 Login to Access Roy's AI Interview Coach")
+    st.title("🔐 Login to Access Roy's AI Interview Coach")
 
     with st.form("login_form"):
         username = st.text_input("Username", value="", key="login_user")
@@ -32,25 +32,28 @@ if not st.session_state.authenticated:
     if submitted:
         if check_login(username, password):
             st.session_state.authenticated = True
-            st.success("\u2705 Login successful!")
+            st.session_state.username = username.strip().lower()
+            st.success("✅ Login successful!")
             st.rerun()
         else:
             st.session_state.login_attempted = True
 
     if st.session_state.login_attempted:
-        st.error("\u274C Invalid username or password.")
+        st.error("❌ Invalid username or password.")
     st.stop()
 
 # ------------------ LOGOUT ------------------
 if st.session_state.get("authenticated", False):
     with st.sidebar:
-        if st.button("\U0001F6AA Logout"):
+        if st.button("🚪 Logout"):
             st.session_state.authenticated = False
             st.session_state.login_attempted = False
             st.experimental_rerun()
 
 # ------------------ SETUP ------------------
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+BACKUP_FILE = "profiles_backup.json"
 
 def get_default_profile():
     return {
@@ -65,52 +68,55 @@ def get_default_profile():
         "goals": ""
     }
 
-# ------------------ GITHUB STORAGE ------------------
+def github_api_headers():
+    return {"Authorization": f"token {st.secrets.github.token}"}
+
+def get_github_url():
+    return f"https://api.github.com/repos/{st.secrets.github.username}/{st.secrets.github.repo}/contents/{st.secrets.github.filepath}"
+
 def load_profiles():
     try:
-        url = f"https://api.github.com/repos/{st.secrets.github.username}/{st.secrets.github.repo}/contents/{st.secrets.github.filepath}"
-        headers = {"Authorization": f"token {st.secrets.github.token}"}
-        res = requests.get(url, headers=headers)
+        url = get_github_url()
+        res = requests.get(url, headers=github_api_headers())
         if res.status_code == 200:
             content = base64.b64decode(res.json()["content"])
             st.session_state.profile_sha = res.json()["sha"]
             return json.loads(content)
     except Exception:
-        st.error("Could not load profiles from GitHub.")
-    return {"Default": {"basic": get_default_profile(), "advanced": []}}
+        pass
+    if pathlib.Path(BACKUP_FILE).exists():
+        with open(BACKUP_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
 def save_profiles(profiles):
     try:
-        url = f"https://api.github.com/repos/{st.secrets.github.username}/{st.secrets.github.repo}/contents/{st.secrets.github.filepath}"
-        headers = {"Authorization": f"token {st.secrets.github.token}"}
+        url = get_github_url()
         encoded_content = base64.b64encode(json.dumps(profiles, indent=2).encode()).decode()
         data = {
-            "message": "Update profiles.json via Streamlit",
+            "message": f"Update by {st.session_state.username} at {datetime.datetime.now()}",
             "content": encoded_content,
             "sha": st.session_state.get("profile_sha"),
             "branch": "main"
         }
-        res = requests.put(url, headers=headers, json=data)
+        res = requests.put(url, headers=github_api_headers(), json=data)
         if res.status_code == 200:
             st.success("Profiles saved to GitHub.")
             st.session_state.profile_sha = res.json()["content"]["sha"]
         else:
             st.error("Failed to save profiles to GitHub.")
-    except Exception as e:
-        st.error("Error saving profiles to GitHub.")
+    except Exception:
+        with open(BACKUP_FILE, "w", encoding="utf-8") as f:
+            json.dump(profiles, f, indent=2)
+        st.warning("GitHub unavailable, saved to local backup.")
 
 # ------------------ STATE INIT ------------------
-for key, default in {
-    "profiles": load_profiles(),
-    "selected_profile": "Default",
-    "gk_mode": False,
-    "gk_questions": [],
-    "gk_answers": [],
-    "gk_index": 0,
-    "new_profile_name": ""
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = default
+username_key = st.session_state.username
+if "profiles" not in st.session_state:
+    all_profiles = load_profiles()
+    st.session_state.profiles = all_profiles.get(username_key, {"Default": {"basic": get_default_profile(), "advanced": []}})
+if "selected_profile" not in st.session_state:
+    st.session_state.selected_profile = "Default"
 
 # ------------------ FUNCTIONS ------------------
 def generate_interview_answer(question, profile_bundle):
@@ -141,20 +147,20 @@ def save_to_pdf(question, answer):
     return filename
 
 # ------------------ UI ------------------
-st.title("\U0001F9E0 Roy's AI Interview Coach")
+st.title("🧠 Roy's AI Interview Coach")
 
 # ------------------ PROFILE MANAGER ------------------
-st.sidebar.header("\U0001F464 Profile Manager")
+st.sidebar.header("👤 Profile Manager")
 profile_names = list(st.session_state.profiles.keys())
 st.session_state.selected_profile = st.sidebar.selectbox("Choose a profile", profile_names)
 
 st.sidebar.text_input("New profile name", key="new_profile_name")
-if st.sidebar.button("\U0001F4BE Save New Profile"):
+if st.sidebar.button("💾 Save New Profile"):
     name = st.session_state.new_profile_name.strip()
     if name and name not in st.session_state.profiles:
         st.session_state.profiles[name] = {"basic": get_default_profile(), "advanced": []}
         st.session_state.selected_profile = name
-        save_profiles(st.session_state.profiles)
+        save_profiles({st.session_state.username: st.session_state.profiles})
         st.rerun()
 
 current_profile = st.session_state.profiles[st.session_state.selected_profile]
@@ -162,7 +168,7 @@ profile = current_profile["basic"]
 advanced_qna = current_profile["advanced"]
 
 # ------------------ PROFILE EDIT ------------------
-with st.expander("\U0001F4DD Edit Basic Profile"):
+with st.expander("📝 Edit Basic Profile"):
     profile["name"] = st.text_input("Name", profile["name"])
     profile["title"] = st.text_input("Job Title", profile["title"])
     profile["location"] = st.text_input("Location", profile["location"])
@@ -172,79 +178,20 @@ with st.expander("\U0001F4DD Edit Basic Profile"):
     profile["learning"] = st.text_area("Currently Learning", ", ".join(profile["learning"])).split(", ")
     profile["certifications"] = st.text_area("Certifications", ", ".join(profile["certifications"])).split(", ")
     profile["goals"] = st.text_area("Career Goals", profile["goals"])
-    save_profiles(st.session_state.profiles)
-
-# ------------------ GET TO KNOW ME ------------------
-if st.button("\U0001F9E0 Get to Know Me Better"):
-    st.session_state.gk_mode = True
-    st.session_state.gk_index = 0
-    st.session_state.gk_answers = []
-
-    question_prompt = (
-        "Generate 3 insightful and unique questions to learn about someone's "
-        "professional background and personality to improve personalized advice. "
-        "Return them as a JSON list of strings."
-    )
-    try:
-        res = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": question_prompt}]
-        )
-        st.session_state.gk_questions = json.loads(res.choices[0].message.content)
-    except Exception:
-        st.error("Failed to generate questions.")
-        st.session_state.gk_mode = False
-    st.rerun()
-
-if st.session_state.gk_mode and st.session_state.gk_questions and st.session_state.gk_index < len(st.session_state.gk_questions):
-    current_q = st.session_state.gk_questions[st.session_state.gk_index]
-    st.subheader("\U0001F9E0 Getting to Know You")
-    st.write(current_q)
-    user_input = st.text_area("Your answer", height=200, key=f"gk_input_{st.session_state.gk_index}")
-
-    col1, col2 = st.columns(2)
-    if col1.button("\u2705 Submit Answer", key="submit_answer"):
-        st.session_state.gk_answers.append({"q": current_q, "a": user_input})
-        st.session_state.gk_index += 1
-        st.rerun()
-
-    if col2.button("\U0001F6AA Exit", key="exit_gk"):
-        current_profile["advanced"].extend(st.session_state.gk_answers)
-        save_profiles(st.session_state.profiles)
-        st.session_state.gk_mode = False
-        st.rerun()
-    st.stop()
-elif st.session_state.gk_mode:
-    current_profile["advanced"].extend(st.session_state.gk_answers)
-    save_profiles(st.session_state.profiles)
-    st.session_state.gk_mode = False
-    st.success("\U0001F389 All questions answered and saved.")
-
-# ------------------ ADVANCED Q&A ------------------
-with st.expander("\U0001F50D View Advanced Q&A"):
-    for i, item in enumerate(advanced_qna):
-        edited_answer = st.text_area(f"Q{i+1}: {item['q']}", value=item["a"], key=f"edit_{i}")
-        if st.button(f"\U0001F4BE Save Edit Q{i+1}", key=f"save_edit_{i}"):
-            advanced_qna[i]["a"] = edited_answer
-            save_profiles(st.session_state.profiles)
-            st.success(f"Answer to Q{i+1} updated.")
-        if st.button(f"\U0001F5D1️ Delete Q{i+1}", key=f"delete_{i}"):
-            del advanced_qna[i]
-            save_profiles(st.session_state.profiles)
-            st.rerun()
+    save_profiles({st.session_state.username: st.session_state.profiles})
 
 # ------------------ INTERVIEW SIM ------------------
 st.markdown("---")
-st.subheader("\U0001F5E3️ Interview Simulator")
+st.subheader("💬 Interview Simulator")
 question_input = st.text_input("Enter your interview question")
 
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
         answer = generate_interview_answer(question_input, current_profile)
         st.markdown("---")
-        st.subheader("\U0001F5E3️ Answer:")
+        st.subheader("🗣️ Answer:")
         st.write(answer)
 
-        if st.button("\U0001F4C4 Export as PDF"):
+        if st.button("📄 Export as PDF"):
             filename = save_to_pdf(question_input, answer)
             st.success(f"Saved as {filename}")
