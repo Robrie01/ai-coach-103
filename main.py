@@ -49,7 +49,7 @@ with st.sidebar:
         st.rerun()
 
 # ------------------ SETUP ------------------
-openai.api_key = os.environ["OPENAI_API_KEY"]
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def get_default_profile():
     return {
