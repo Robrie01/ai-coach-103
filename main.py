@@ -190,13 +190,26 @@ if st.session_state.gk_mode and st.session_state.gk_questions and st.session_sta
         st.session_state.gk_mode = False
         st.rerun()
     st.stop()
-elif st.session_state.gk_mode:
+elif st.session_state.gk_mode and st.session_state.gk_questions:
     current_profile["advanced"].extend(st.session_state.gk_answers)
     save_profiles({st.session_state.username: st.session_state.profiles})
     st.session_state.gk_mode = False
     st.success("🎉 All questions answered and saved.")
 
 st.title("🧠 Roy's AI Interview Coach")
+
+st.markdown("---")
+st.subheader("💬 Interview Simulator")
+question_input = st.text_input("Enter your interview question")
+if st.button("Generate Answer") and question_input:
+    with st.spinner("Thinking..."):
+        answer = generate_interview_answer(question_input, current_profile)
+        st.markdown("---")
+        st.subheader("🗣️ Answer:")
+        st.write(answer)
+        if st.button("📄 Export as PDF"):
+            filename = save_to_pdf(question_input, answer)
+            st.success(f"Saved as {filename}")
 
 with st.expander("📘 View Saved 'Get to Know Me' Answers"):
     if advanced_qna:
