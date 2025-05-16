@@ -7,33 +7,9 @@ import datetime
 import os
 import pathlib
 
-# ------------------ LOGIN SYSTEM ------------------
-#
-#def check_login(username, password):
-#    return (
-#        username == st.secrets["credentials"]["username"]
-#        and password == st.secrets["credentials"]["password"]
-#    )
-#
-#if "authenticated" not in st.session_state:
-#    st.session_state.authenticated = False
-#
-#if not st.session_state.authenticated:
-#    st.title("🔐 Login to Access Roy's AI Interview Coach")
-#    username = st.text_input("Username")
-#    password = st.text_input("Password", type="password")
-#    if st.button("Login"):
-#        if check_login(username, password):
-#            st.session_state.authenticated = True
-#            st.rerun()
-#        else:
-#            st.error("Invalid credentials.")
-#    st.stop()
-
 # ------------------ SETUP ------------------
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
-# ------------------ DEFAULT PROFILE ------------------
 def get_default_profile():
     return {
         "name": "Roy O’Brien",
@@ -47,7 +23,6 @@ def get_default_profile():
         "goals": ""
     }
 
-# ------------------ LOAD/SAVE PROFILES ------------------
 PROFILE_STORE = "profiles.json"
 
 def load_profiles():
@@ -73,12 +48,12 @@ if "gk_answers" not in st.session_state:
     st.session_state.gk_answers = []
 if "gk_index" not in st.session_state:
     st.session_state.gk_index = 0
+if "new_profile_name" not in st.session_state:
+    st.session_state.new_profile_name = ""
 
-# ------------------ FUNCTION ------------------
 def generate_interview_answer(question, profile_bundle):
     full_profile = profile_bundle["basic"].copy()
     full_profile["advancedQA"] = profile_bundle["advanced"]
-
     system_prompt = (
         "You are simulating interview responses for a candidate based on the following profile.\n"
         f"{json.dumps(full_profile)}\n\n"
@@ -93,7 +68,6 @@ def generate_interview_answer(question, profile_bundle):
     )
     return response.choices[0].message.content
 
-# ------------------ PDF EXPORT ------------------
 def save_to_pdf(question, answer):
     pdf = FPDF()
     pdf.add_page()
@@ -104,30 +78,30 @@ def save_to_pdf(question, answer):
     pdf.output(filename)
     return filename
 
-# ------------------ UI CONFIG ------------------
+# ------------------ PAGE CONFIG ------------------
 st.set_page_config(page_title="AI Interview Assistant", layout="centered")
 st.title("🧠 Roy's AI Interview Coach")
 
-# ------------------ PROFILE SELECTION ------------------
+# ------------------ PROFILE MANAGER ------------------
 st.sidebar.header("👤 Profile Manager")
 profile_names = list(st.session_state.profiles.keys())
 selected = st.sidebar.selectbox("Choose a profile", profile_names)
 st.session_state.selected_profile = selected
 
-if st.sidebar.button("➕ Create New Profile"):
-    new_name = st.sidebar.text_input("Enter new profile name", key="new_profile")
-    if new_name and new_name not in st.session_state.profiles:
-        st.session_state.profiles[new_name] = {"basic": get_default_profile(), "advanced": []}
-        st.session_state.selected_profile = new_name
+st.sidebar.text_input("New profile name", key="new_profile_name")
+if st.sidebar.button("💾 Save New Profile"):
+    name = st.session_state.new_profile_name.strip()
+    if name and name not in st.session_state.profiles:
+        st.session_state.profiles[name] = {"basic": get_default_profile(), "advanced": []}
+        st.session_state.selected_profile = name
         save_profiles(st.session_state.profiles)
         st.rerun()
 
-# Load current profile
 current_profile = st.session_state.profiles[st.session_state.selected_profile]
 profile = current_profile["basic"]
 advanced_qna = current_profile["advanced"]
 
-# ------------------ PROFILE EDITOR ------------------
+# ------------------ PROFILE EDIT ------------------
 with st.expander("📝 Edit Basic Profile"):
     profile["name"] = st.text_input("Name", profile["name"])
     profile["title"] = st.text_input("Job Title", profile["title"])
@@ -138,6 +112,7 @@ with st.expander("📝 Edit Basic Profile"):
     profile["learning"] = st.text_area("Currently Learning", ", ".join(profile["learning"])).split(", ")
     profile["certifications"] = st.text_area("Certifications", ", ".join(profile["certifications"])).split(", ")
     profile["goals"] = st.text_area("Career Goals", profile["goals"])
+    save_profiles(st.session_state.profiles)
 
 # ------------------ GET TO KNOW ME ------------------
 if st.button("🧠 Get to Know Me Better"):
@@ -150,18 +125,22 @@ if st.button("🧠 Get to Know Me Better"):
         "professional background and personality to improve personalized advice. "
         "Return them as a JSON list of strings."
     )
-    res = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": question_prompt}]
-    )
-    st.session_state.gk_questions = json.loads(res.choices[0].message.content)
+    try:
+        res = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question_prompt}]
+        )
+        st.session_state.gk_questions = json.loads(res.choices[0].message.content)
+    except Exception as e:
+        st.error("Failed to generate questions.")
+        st.session_state.gk_mode = False
     st.rerun()
 
-if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state.gk_questions):
+if st.session_state.gk_mode and st.session_state.gk_questions and st.session_state.gk_index < len(st.session_state.gk_questions):
     current_q = st.session_state.gk_questions[st.session_state.gk_index]
     st.subheader("🧠 Getting to Know You")
     st.write(current_q)
-    user_input = st.text_input("Your answer", key=f"gk_input_{st.session_state.gk_index}")
+    user_input = st.text_area("Your answer", height=200, key=f"gk_input_{st.session_state.gk_index}")
 
     col1, col2 = st.columns(2)
     if col1.button("✅ Submit Answer", key="submit_answer"):
@@ -182,18 +161,20 @@ elif st.session_state.gk_mode:
     st.session_state.gk_mode = False
     st.success("🎉 All questions answered and saved.")
 
-# ------------------ ADVANCED VIEW & DELETE ------------------
+# ------------------ ADVANCED Q&A ------------------
 with st.expander("🔍 View Advanced Q&A"):
     for i, item in enumerate(advanced_qna):
-        question = item["q"]
-        answer = item["a"]
-        st.markdown(f"**Q{i+1}:** {question}  \n**A:** {answer}")
+        edited_answer = st.text_area(f"Q{i+1}: {item['q']}", value=item["a"], key=f"edit_{i}")
+        if st.button(f"💾 Save Edit Q{i+1}", key=f"save_edit_{i}"):
+            advanced_qna[i]["a"] = edited_answer
+            save_profiles(st.session_state.profiles)
+            st.success(f"Answer to Q{i+1} updated.")
         if st.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
             del advanced_qna[i]
             save_profiles(st.session_state.profiles)
             st.rerun()
 
-# ------------------ INTERVIEW SIMULATOR ------------------
+# ------------------ INTERVIEW SIM ------------------
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
 question_input = st.text_input("Enter your interview question")

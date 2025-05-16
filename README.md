@@ -1,3 +1,1 @@
-# Roy's AI Interview Coach
-
-Profiles auto-save to `profiles.json`.
+Auto-saving, editable Q&A, and fixed profile creation.
