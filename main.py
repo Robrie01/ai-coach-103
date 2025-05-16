@@ -117,9 +117,20 @@ def save_profiles(profiles):
 username_key = st.session_state.username
 if "profiles" not in st.session_state:
     all_profiles = load_profiles()
-    st.session_state.profiles = all_profiles.get(username_key, {"Default": {"basic": get_default_profile(), "advanced": []}})
-if "selected_profile" not in st.session_state:
-    st.session_state.selected_profile = "Default"
+    user_profiles = all_profiles.get(username_key, {})
+    if not user_profiles:
+        st.title("👤 Create Your First Profile")
+        new_name = st.text_input("Enter a profile name to get started:")
+        if st.button("Create Profile") and new_name:
+            user_profiles[new_name] = {"basic": get_default_profile(), "advanced": []}
+            st.session_state.selected_profile = new_name
+            st.session_state.profiles = user_profiles
+            save_profiles({st.session_state.username: st.session_state.profiles})
+            st.rerun()
+        st.stop()
+    else:
+        st.session_state.profiles = user_profiles
+        st.session_state.selected_profile = list(user_profiles.keys())[0]
 
 def generate_interview_answer(question, profile_bundle):
     full_profile = profile_bundle["basic"].copy()
@@ -231,9 +242,29 @@ with st.expander("📘 View Saved 'Get to Know Me' Answers"):
 
 st.sidebar.header("👤 Profile Manager")
 profile_names = list(st.session_state.profiles.keys())
-st.session_state.selected_profile = st.sidebar.selectbox("Choose a profile", profile_names)
+selected_index = profile_names.index(st.session_state.selected_profile) if st.session_state.selected_profile in profile_names else 0
+st.session_state.selected_profile = st.sidebar.selectbox("Choose a profile", profile_names, index=selected_index)
 
-st.sidebar.text_input("New profile name", key="new_profile_name")
+if st.sidebar.button("🗑️ Delete Selected Profile"):
+    st.session_state.show_confirm_dialog = True
+
+if st.session_state.get("show_confirm_dialog"):
+    with st.modal("⚠️ Confirm Deletion"):
+        st.warning(f"Are you sure you want to delete the profile: {st.session_state.selected_profile}?")
+        confirm_col1, confirm_col2 = st.columns(2)
+        if confirm_col1.button("Yes, delete it"):
+            if len(st.session_state.profiles) > 1:
+                del st.session_state.profiles[st.session_state.selected_profile]
+                st.session_state.selected_profile = list(st.session_state.profiles.keys())[0]
+                save_profiles({st.session_state.username: st.session_state.profiles})
+                st.session_state.show_confirm_dialog = False
+                st.experimental_rerun()
+            else:
+                st.warning("At least one profile must remain.")
+        if confirm_col2.button("Cancel"):
+            st.session_state.show_confirm_dialog = False
+
+, key="new_profile_name")
 if st.sidebar.button("💾 Save New Profile"):
     name = st.session_state.new_profile_name.strip()
     if name and name not in st.session_state.profiles:
