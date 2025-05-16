@@ -142,6 +142,7 @@ if st.button("🧠 Get to Know Me Better"):
         messages=[{"role": "user", "content": question_prompt}]
     )
     st.session_state.gk_questions = json.loads(res.choices[0].message.content)
+    st.experimental_rerun()
 
 if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state.gk_questions):
     current_q = st.session_state.gk_questions[st.session_state.gk_index]
@@ -183,7 +184,7 @@ question_input = st.text_input("Enter your interview question")
 
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
-        answer = generate_interview_answer(current_profile, current_profile)
+        answer = generate_interview_answer(question_input, current_profile)
         st.markdown("---")
         st.subheader("🗣️ Answer:")
         st.write(answer)
