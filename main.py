@@ -10,36 +10,36 @@ import os
 import pathlib
 
 # ------------------ LOGIN SYSTEM ------------------
-def check_login(username, password):
-    users = st.secrets["users"]
-    username = username.strip().lower()  # case-insensitive and trims spaces
-    return username in users and password == users[username]
-
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "login_attempted" not in st.session_state:
-    st.session_state.login_attempted = False
-
-if not st.session_state.authenticated:
-    st.title("🔐 Login to Access Roy's AI Interview Coach")
-
-    with st.form("login_form"):
-        username = st.text_input("Username", value="", key="login_user")
-        password = st.text_input("Password", type="password", value="", key="login_pass")
-        submitted = st.form_submit_button("Login")
-
-    if submitted:
-        if check_login(username, password):
-            st.session_state.authenticated = True
-            st.success("✅ Login successful!")
-            st.rerun()
-        else:
-            st.session_state.login_attempted = True
-
-    if st.session_state.login_attempted:
-        st.error("❌ Invalid username or password.")
-    st.stop()
-
+#def check_login(username, password):
+#    users = st.secrets["users"]
+#    username = username.strip().lower()  # case-insensitive and trims spaces
+#    return username in users and password == users[username]
+#
+#if "authenticated" not in st.session_state:
+#    st.session_state.authenticated = False
+#if "login_attempted" not in st.session_state:
+#    st.session_state.login_attempted = False
+#
+#if not st.session_state.authenticated:
+#    st.title("🔐 Login to Access Roy's AI Interview Coach")
+#
+#    with st.form("login_form"):
+#        username = st.text_input("Username", value="", key="login_user")
+#        password = st.text_input("Password", type="password", value="", key="login_pass")
+#        submitted = st.form_submit_button("Login")
+#
+#    if submitted:
+#        if check_login(username, password):
+#            st.session_state.authenticated = True
+#            st.success("✅ Login successful!")
+#            st.rerun()
+#       else:
+#            st.session_state.login_attempted = True
+#
+#    if st.session_state.login_attempted:
+#        st.error("❌ Invalid username or password.")
+#    st.stop()
+#
 # ------------------ LOGOUT ------------------
 if st.session_state.get("authenticated", False):
     with st.sidebar:
