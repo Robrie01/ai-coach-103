@@ -264,7 +264,7 @@ if st.session_state.get("show_confirm_dialog"):
         if confirm_col2.button("Cancel"):
             st.session_state.show_confirm_dialog = False
 
-, key="new_profile_name")
+st.sidebar.text_input("New profile name", key="new_profile_name")
 if st.sidebar.button("💾 Save New Profile"):
     name = st.session_state.new_profile_name.strip()
     if name and name not in st.session_state.profiles:
