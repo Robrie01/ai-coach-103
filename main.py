@@ -160,8 +160,72 @@ def save_to_pdf(question, answer):
     pdf.output(filename)
     return filename
 
+# ------------------ GET TO KNOW ME ------------------
+if st.button("🧠 Get to Know Me Better"):
+    st.session_state.gk_mode = True
+    st.session_state.gk_index = 0
+    st.session_state.gk_answers = []
+    question_prompt = (
+        "Generate 3 insightful and unique questions to learn about someone's "
+        "professional background and personality to improve personalized advice. "
+        "Return them as a JSON list of strings."
+    )
+    try:
+        res = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question_prompt}]
+        )
+        st.session_state.gk_questions = json.loads(res.choices[0].message.content)
+    except Exception as e:
+        st.error("Failed to generate questions.")
+        st.session_state.gk_mode = False
+    st.rerun()
+
+if st.session_state.gk_mode and st.session_state.gk_questions and st.session_state.gk_index < len(st.session_state.gk_questions):
+    current_q = st.session_state.gk_questions[st.session_state.gk_index]
+    st.subheader("🧠 Getting to Know You")
+    st.write(current_q)
+    user_input = st.text_area("Your answer", height=200, key=f"gk_input_{st.session_state.gk_index}")
+
+    col1, col2 = st.columns(2)
+    if col1.button("✅ Submit Answer", key="submit_answer"):
+        st.session_state.gk_answers.append({"q": current_q, "a": user_input})
+        st.session_state.gk_index += 1
+        st.rerun()
+
+    if col2.button("🚪 Exit", key="exit_gk"):
+        current_profile["advanced"].extend(st.session_state.gk_answers)
+        save_profiles({st.session_state.username: st.session_state.profiles})
+        st.session_state.gk_mode = False
+        st.rerun()
+    st.stop()
+elif st.session_state.gk_mode:
+    current_profile["advanced"].extend(st.session_state.gk_answers)
+    save_profiles({st.session_state.username: st.session_state.profiles})
+    st.session_state.gk_mode = False
+    st.success("🎉 All questions answered and saved.")
+
 # ------------------ UI ------------------
 st.title("🧠 Roy's AI Interview Coach")
+
+# ------------------ SAVED Q&A VIEWER ------------------
+with st.expander("📘 View Saved 'Get to Know Me' Answers"):
+    if advanced_qna:
+        for i, item in enumerate(advanced_qna):
+            st.markdown(f"**Q{i+1}:** {item['q']}")
+            edited_answer = st.text_area(f"Edit A{i+1}:", item['a'], key=f"edit_answer_{i}")
+            col1, col2 = st.columns([1, 1])
+            if col1.button(f"💾 Save A{i+1}", key=f"save_edit_{i}"):
+                advanced_qna[i]['a'] = edited_answer
+                save_profiles({st.session_state.username: st.session_state.profiles})
+                st.success(f"Answer {i+1} updated.")
+            if col2.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
+                del advanced_qna[i]
+                save_profiles({st.session_state.username: st.session_state.profiles})
+                st.experimental_rerun()
+            st.markdown("---")
+    else:
+        st.info("No saved Q&A yet. Try 'Get to Know Me' to get started.")
 
 # ------------------ PROFILE MANAGER ------------------
 st.sidebar.header("👤 Profile Manager")
