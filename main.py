@@ -169,8 +169,9 @@ elif st.session_state.gk_mode:
 # ------------------ ADVANCED VIEW & DELETE ------------------
 with st.expander("🔍 View Advanced Q&A"):
     for i, item in enumerate(advanced_qna):
-        st.markdown(f"**Q{i+1}:** {item['q']}  \n**A:** {item['a']}") 
-**A:** {item['a']}")
+        question = item["q"]
+        answer = item["a"]
+        st.markdown(f"**Q{i+1}:** {question}  \n**A:** {answer}")
         if st.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
             del advanced_qna[i]
             st.experimental_rerun()
