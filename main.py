@@ -7,6 +7,8 @@ from fpdf import FPDF
 import datetime
 import os
 import pathlib
+import requests
+import base64
 
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
@@ -63,17 +65,39 @@ def get_default_profile():
         "goals": ""
     }
 
-PROFILE_STORE = "profiles.json"
-
+# ------------------ GITHUB STORAGE ------------------
 def load_profiles():
-    if pathlib.Path(PROFILE_STORE).exists():
-        with open(PROFILE_STORE, "r", encoding="utf-8") as f:
-            return json.load(f)
+    try:
+        url = f"https://api.github.com/repos/{st.secrets.github.username}/{st.secrets.github.repo}/contents/{st.secrets.github.filepath}"
+        headers = {"Authorization": f"token {st.secrets.github.token}"}
+        res = requests.get(url, headers=headers)
+        if res.status_code == 200:
+            content = base64.b64decode(res.json()["content"])
+            st.session_state.profile_sha = res.json()["sha"]
+            return json.loads(content)
+    except Exception:
+        st.error("Could not load profiles from GitHub.")
     return {"Default": {"basic": get_default_profile(), "advanced": []}}
 
 def save_profiles(profiles):
-    with open(PROFILE_STORE, "w", encoding="utf-8") as f:
-        json.dump(profiles, f, indent=2)
+    try:
+        url = f"https://api.github.com/repos/{st.secrets.github.username}/{st.secrets.github.repo}/contents/{st.secrets.github.filepath}"
+        headers = {"Authorization": f"token {st.secrets.github.token}"}
+        encoded_content = base64.b64encode(json.dumps(profiles, indent=2).encode()).decode()
+        data = {
+            "message": "Update profiles.json via Streamlit",
+            "content": encoded_content,
+            "sha": st.session_state.get("profile_sha"),
+            "branch": "main"
+        }
+        res = requests.put(url, headers=headers, json=data)
+        if res.status_code == 200:
+            st.success("Profiles saved to GitHub.")
+            st.session_state.profile_sha = res.json()["content"]["sha"]
+        else:
+            st.error("Failed to save profiles to GitHub.")
+    except Exception as e:
+        st.error("Error saving profiles to GitHub.")
 
 # ------------------ STATE INIT ------------------
 for key, default in {
@@ -162,7 +186,7 @@ if st.button("\U0001F9E0 Get to Know Me Better"):
         "Return them as a JSON list of strings."
     )
     try:
-        res = openai.ChatCompletion.create(
+        res = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": question_prompt}]
         )
