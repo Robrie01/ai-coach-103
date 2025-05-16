@@ -1,3 +1,4 @@
+
 import streamlit as st
 import openai
 import json
@@ -23,7 +24,7 @@ import os
 #    if st.button("Login"):
 #        if check_login(username, password):
 #            st.session_state.authenticated = True
-#            st.experimental_rerun()
+#            st.rerun()
 #        else:
 #            st.error("Invalid credentials.")
 #    st.stop()
@@ -75,8 +76,24 @@ def save_to_pdf(question, answer):
     pdf.output(filename)
     return filename
 
+# ------------------ LOAD/SAVE PROFILES ------------------
+import pathlib
+
+PROFILE_STORE = "profiles.json"
+
+def load_profiles():
+    if pathlib.Path(PROFILE_STORE).exists():
+        with open(PROFILE_STORE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"Default": {"basic": get_default_profile(), "advanced": []}}
+
+def save_profiles(profiles):
+    with open(PROFILE_STORE, "w", encoding="utf-8") as f:
+        json.dump(profiles, f, indent=2)
+
 # ------------------ STATE INIT ------------------
 if "profiles" not in st.session_state:
+    st.session_state.profiles = load_profiles()
     st.session_state.profiles = {
         "Default": {"basic": get_default_profile(), "advanced": []}
     }
@@ -105,8 +122,9 @@ if st.sidebar.button("➕ Create New Profile"):
     new_name = st.sidebar.text_input("Enter new profile name", key="new_profile")
     if new_name and new_name not in st.session_state.profiles:
         st.session_state.profiles[new_name] = {"basic": get_default_profile(), "advanced": []}
+        save_profiles(st.session_state.profiles)
         st.session_state.selected_profile = new_name
-        st.experimental_rerun()
+        st.rerun()
 
 # Load current profile
 current_profile = st.session_state.profiles[st.session_state.selected_profile]
@@ -141,7 +159,7 @@ if st.button("🧠 Get to Know Me Better"):
         messages=[{"role": "user", "content": question_prompt}]
     )
     st.session_state.gk_questions = json.loads(res.choices[0].message.content)
-    st.experimental_rerun()
+    st.rerun()
 
 if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state.gk_questions):
     current_q = st.session_state.gk_questions[st.session_state.gk_index]
@@ -153,16 +171,18 @@ if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state
     if col1.button("✅ Submit Answer", key="submit_answer"):
         st.session_state.gk_answers.append({"q": current_q, "a": user_input})
         st.session_state.gk_index += 1
-        st.experimental_rerun()
+        st.rerun()
 
     if col2.button("🚪 Exit", key="exit_gk"):
         st.session_state.gk_mode = False
         st.session_state.profiles[st.session_state.selected_profile]["advanced"].extend(st.session_state.gk_answers)
-        st.experimental_rerun()
+        save_profiles(st.session_state.profiles)
+        st.rerun()
 
     st.stop()
 elif st.session_state.gk_mode:
     st.session_state.profiles[st.session_state.selected_profile]["advanced"].extend(st.session_state.gk_answers)
+        save_profiles(st.session_state.profiles)
     st.session_state.gk_mode = False
     st.success("🎉 All questions answered and saved.")
 
@@ -174,7 +194,8 @@ with st.expander("🔍 View Advanced Q&A"):
         st.markdown(f"**Q{i+1}:** {question}  \n**A:** {answer}")
         if st.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
             del advanced_qna[i]
-            st.experimental_rerun()
+            save_profiles(st.session_state.profiles)
+            st.rerun()
 
 # ------------------ INTERVIEW SIMULATOR ------------------
 st.markdown("---")
