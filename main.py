@@ -1,5 +1,7 @@
-
 import streamlit as st
+st.set_page_config(page_title="AI Interview Assistant", layout="centered")
+
+# THEN import or use other streamlit commands
 import openai
 import json
 from fpdf import FPDF
