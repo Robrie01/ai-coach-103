@@ -97,7 +97,7 @@ def generate_interview_answer(question, profile_bundle):
         f"{json.dumps(full_profile)}\n\n"
         "Answer the following interview question clearly and confidently."
     )
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": system_prompt},
