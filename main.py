@@ -122,7 +122,7 @@ if st.sidebar.button("➕ Create New Profile"):
     new_name = st.sidebar.text_input("Enter new profile name", key="new_profile")
     if new_name and new_name not in st.session_state.profiles:
         st.session_state.profiles[new_name] = {"basic": get_default_profile(), "advanced": []}
-        save_profiles(st.session_state.profiles)
+    save_profiles(st.session_state.profiles)
         st.session_state.selected_profile = new_name
         st.rerun()
 
@@ -176,13 +176,13 @@ if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state
     if col2.button("🚪 Exit", key="exit_gk"):
         st.session_state.gk_mode = False
         st.session_state.profiles[st.session_state.selected_profile]["advanced"].extend(st.session_state.gk_answers)
-        save_profiles(st.session_state.profiles)
+    save_profiles(st.session_state.profiles)
         st.rerun()
 
     st.stop()
 elif st.session_state.gk_mode:
     st.session_state.profiles[st.session_state.selected_profile]["advanced"].extend(st.session_state.gk_answers)
-        save_profiles(st.session_state.profiles)
+    save_profiles(st.session_state.profiles)
     st.session_state.gk_mode = False
     st.success("🎉 All questions answered and saved.")
 
@@ -194,7 +194,7 @@ with st.expander("🔍 View Advanced Q&A"):
         st.markdown(f"**Q{i+1}:** {question}  \n**A:** {answer}")
         if st.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
             del advanced_qna[i]
-            save_profiles(st.session_state.profiles)
+    save_profiles(st.session_state.profiles)
             st.rerun()
 
 # ------------------ INTERVIEW SIMULATOR ------------------
