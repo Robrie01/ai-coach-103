@@ -9,6 +9,7 @@ from fpdf import FPDF
 from io import BytesIO
 import docx2txt
 import PyPDF2
+import os
 
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
