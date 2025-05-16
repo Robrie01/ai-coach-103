@@ -7,14 +7,35 @@ import datetime
 import os
 import pathlib
 
+# ------------------ LOGIN SYSTEM ------------------
+def check_login(username, password):
+    creds = st.secrets["credentials"]
+    return username == creds["username"] and password == creds["password"]
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.title("🔐 Login to Access Roy's AI Interview Coach")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if check_login(username, password):
+            st.session_state.authenticated = True
+            st.success("✅ Login successful!")
+            st.rerun()
+        else:
+            st.error("❌ Invalid credentials.")
+    st.stop()
+
 # ------------------ SETUP ------------------
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 def get_default_profile():
     return {
-        "name": "Roy O’Brien",
-        "title": "IT Systems Technician",
-        "location": "Derry, Northern Ireland",
+        "name": [],
+        "title": [],
+        "location": [],
         "experience": [],
         "skills": [],
         "softSkills": [],
