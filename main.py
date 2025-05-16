@@ -10,7 +10,6 @@ import requests
 import base64
 from fpdf import FPDF
 
-# ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
     users = st.secrets["users"]
     username = username.strip().lower()
@@ -23,12 +22,10 @@ if "login_attempted" not in st.session_state:
 
 if not st.session_state.authenticated:
     st.title("🔐 Login to Access Roy's AI Interview Coach")
-
     with st.form("login_form"):
         username = st.text_input("Username", value="", key="login_user")
         password = st.text_input("Password", type="password", value="", key="login_pass")
         submitted = st.form_submit_button("Login")
-
     if submitted:
         if check_login(username, password):
             st.session_state.authenticated = True
@@ -37,12 +34,10 @@ if not st.session_state.authenticated:
             st.rerun()
         else:
             st.session_state.login_attempted = True
-
     if st.session_state.login_attempted:
         st.error("❌ Invalid username or password.")
     st.stop()
 
-# ------------------ LOGOUT ------------------
 if st.session_state.get("authenticated", False):
     with st.sidebar:
         if st.button("🚪 Logout"):
@@ -50,12 +45,10 @@ if st.session_state.get("authenticated", False):
             st.session_state.login_attempted = False
             st.experimental_rerun()
 
-# ------------------ SETUP ------------------
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 BACKUP_FILE = "profiles_backup.json"
 
-# ------------------ GET TO KNOW ME STATE INIT ------------------
 for key, default in {
     "gk_mode": False,
     "gk_questions": [],
@@ -121,7 +114,6 @@ def save_profiles(profiles):
             json.dump(profiles, f, indent=2)
         st.warning("GitHub unavailable, saved to local backup.")
 
-# ------------------ STATE INIT ------------------
 username_key = st.session_state.username
 if "profiles" not in st.session_state:
     all_profiles = load_profiles()
@@ -129,18 +121,16 @@ if "profiles" not in st.session_state:
 if "selected_profile" not in st.session_state:
     st.session_state.selected_profile = "Default"
 
-# ------------------ FUNCTIONS ------------------
 def generate_interview_answer(question, profile_bundle):
     full_profile = profile_bundle["basic"].copy()
     full_profile["advancedQA"] = profile_bundle["advanced"]
-    system_prompt = (
-        """
-        You are simulating interview responses for a candidate based on the following profile.
-        {profile_data}
+    profile_data = json.dumps(full_profile)
+    system_prompt = f"""
+You are simulating interview responses for a candidate based on the following profile.
+{profile_data}
 
-        Answer the following interview question clearly and confidently.
-        """.replace("{profile_data}", json.dumps(full_profile))
-    )
+Answer the following interview question clearly and confidently.
+"""
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -160,7 +150,6 @@ def save_to_pdf(question, answer):
     pdf.output(filename)
     return filename
 
-# ------------------ GET TO KNOW ME ------------------
 if st.button("🧠 Get to Know Me Better"):
     st.session_state.gk_mode = True
     st.session_state.gk_index = 0
@@ -176,23 +165,25 @@ if st.button("🧠 Get to Know Me Better"):
             messages=[{"role": "user", "content": question_prompt}]
         )
         st.session_state.gk_questions = json.loads(res.choices[0].message.content)
-    except Exception as e:
+    except Exception:
         st.error("Failed to generate questions.")
         st.session_state.gk_mode = False
     st.rerun()
+
+current_profile = st.session_state.profiles[st.session_state.selected_profile]
+profile = current_profile["basic"]
+advanced_qna = current_profile["advanced"]
 
 if st.session_state.gk_mode and st.session_state.gk_questions and st.session_state.gk_index < len(st.session_state.gk_questions):
     current_q = st.session_state.gk_questions[st.session_state.gk_index]
     st.subheader("🧠 Getting to Know You")
     st.write(current_q)
     user_input = st.text_area("Your answer", height=200, key=f"gk_input_{st.session_state.gk_index}")
-
     col1, col2 = st.columns(2)
     if col1.button("✅ Submit Answer", key="submit_answer"):
         st.session_state.gk_answers.append({"q": current_q, "a": user_input})
         st.session_state.gk_index += 1
         st.rerun()
-
     if col2.button("🚪 Exit", key="exit_gk"):
         current_profile["advanced"].extend(st.session_state.gk_answers)
         save_profiles({st.session_state.username: st.session_state.profiles})
@@ -205,10 +196,8 @@ elif st.session_state.gk_mode:
     st.session_state.gk_mode = False
     st.success("🎉 All questions answered and saved.")
 
-# ------------------ UI ------------------
 st.title("🧠 Roy's AI Interview Coach")
 
-# ------------------ SAVED Q&A VIEWER ------------------
 with st.expander("📘 View Saved 'Get to Know Me' Answers"):
     if advanced_qna:
         for i, item in enumerate(advanced_qna):
@@ -227,7 +216,6 @@ with st.expander("📘 View Saved 'Get to Know Me' Answers"):
     else:
         st.info("No saved Q&A yet. Try 'Get to Know Me' to get started.")
 
-# ------------------ PROFILE MANAGER ------------------
 st.sidebar.header("👤 Profile Manager")
 profile_names = list(st.session_state.profiles.keys())
 st.session_state.selected_profile = st.sidebar.selectbox("Choose a profile", profile_names)
@@ -245,7 +233,6 @@ current_profile = st.session_state.profiles[st.session_state.selected_profile]
 profile = current_profile["basic"]
 advanced_qna = current_profile["advanced"]
 
-# ------------------ PROFILE EDIT ------------------
 with st.expander("📝 Edit Basic Profile"):
     profile["name"] = st.text_input("Name", profile["name"])
     profile["title"] = st.text_input("Job Title", profile["title"])
