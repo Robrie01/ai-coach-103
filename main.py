@@ -19,11 +19,13 @@ def check_login(username, password):
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
 if "login_attempted" not in st.session_state:
     st.session_state.login_attempted = False
 
 if not st.session_state.authenticated:
-    st.title("🔐 Login to Access Roy's AI Interview Coach")
+    st.title("🔐 Login to Access AI Interview Coach")
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -31,6 +33,7 @@ if not st.session_state.authenticated:
     if submitted:
         if check_login(username, password):
             st.session_state.authenticated = True
+            st.session_state.username = username.strip().lower()
             st.rerun()
         else:
             st.session_state.login_attempted = True
@@ -38,37 +41,24 @@ if not st.session_state.authenticated:
         st.error("❌ Invalid username or password.")
     st.stop()
 
-# ------------------ LOGOUT BUTTON ------------------
+# ------------------ LOGOUT ------------------
 with st.sidebar:
     if st.button("🚪 Logout"):
-        st.session_state.authenticated = False
-        st.session_state.login_attempted = False
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.rerun()
 
-# ------------------ OPENAI SETUP ------------------
+# ------------------ OPENAI API ------------------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-def get_default_profile():
-    return {
-        "name": "",
-        "title": "",
-        "location": "",
-        "experience": [],
-        "skills": [],
-        "softSkills": [],
-        "learning": [],
-        "certifications": [],
-        "goals": "",
-        "cvText": ""
-    }
-
+# ------------------ PROFILE MANAGEMENT ------------------
 PROFILE_STORE = "profiles.json"
 
 def load_profiles():
     if pathlib.Path(PROFILE_STORE).exists():
         with open(PROFILE_STORE, "r", encoding="utf-8") as f:
             return json.load(f)
-    return {"Default": {"basic": get_default_profile(), "advanced": []}}
+    return {}
 
 def save_profiles(profiles):
     with open(PROFILE_STORE, "w", encoding="utf-8") as f:
@@ -95,8 +85,8 @@ def autofill_profile_from_cv(cv_text):
     return json.loads(response.choices[0].message.content)
 
 def generate_interview_answer(question, profile_bundle):
-    full_profile = profile_bundle["basic"].copy()
-    full_profile["advancedQA"] = profile_bundle["advanced"]
+    full_profile = profile_bundle["profile"]
+    full_profile["advancedQA"] = profile_bundle.get("advanced", [])
     system_prompt = (
         "You are simulating interview responses based on this structured profile and CV content:\n"
         f"{json.dumps(full_profile)}\n\n"
@@ -123,35 +113,62 @@ def save_to_pdf(question, answer):
 # ------------------ STATE INIT ------------------
 if "profiles" not in st.session_state:
     st.session_state.profiles = load_profiles()
-if "selected_profile" not in st.session_state:
-    st.session_state.selected_profile = "Default"
-if "gk_mode" not in st.session_state:
-    st.session_state.gk_mode = False
-if "gk_questions" not in st.session_state:
-    st.session_state.gk_questions = []
-if "gk_answers" not in st.session_state:
-    st.session_state.gk_answers = []
-if "gk_index" not in st.session_state:
-    st.session_state.gk_index = 0
 
-# ------------------ PROFILE MANAGER ------------------
-st.sidebar.header("👤 Profile Manager")
-profile_names = list(st.session_state.profiles.keys())
-selected = st.sidebar.selectbox("Choose a profile", profile_names)
-st.session_state.selected_profile = selected
+username = st.session_state.username
+all_profiles = st.session_state.profiles
 
-new_profile_name = st.sidebar.text_input("New profile name")
-if st.sidebar.button("➕ Save New Profile") and new_profile_name:
-    st.session_state.profiles[new_profile_name] = {"basic": get_default_profile(), "advanced": []}
-    st.session_state.selected_profile = new_profile_name
-    save_profiles(st.session_state.profiles)
-    st.rerun()
+if username not in all_profiles:
+    st.subheader("👤 Set Up Your Profile")
+    name = st.text_input("Full Name *", "")
+    uploaded_file = st.file_uploader("Optional: Upload your CV (PDF or DOCX)", type=["pdf", "docx"])
+    if st.button("Create Profile") and name.strip():
+        profile_data = {
+            "name": name.strip(),
+            "title": "",
+            "location": "",
+            "experience": [],
+            "skills": [],
+            "softSkills": [],
+            "learning": [],
+            "certifications": [],
+            "goals": "",
+            "cvText": ""
+        }
+        if uploaded_file:
+            cv_text = extract_cv_text(uploaded_file)
+            if cv_text:
+                profile_data["cvText"] = cv_text
+                filled = autofill_profile_from_cv(cv_text)
+                for key in ["name", "title", "location", "goals"]:
+                    profile_data[key] = filled.get(key, profile_data.get(key, ""))
+                for key in ["skills", "softSkills", "learning", "certifications"]:
+                    profile_data[key] = [s.strip() for s in filled.get(key, "").split(",")]
+                profile_data["experience"] = filled.get("experience", [])
+        all_profiles[username] = {"profile": profile_data, "advanced": []}
+        save_profiles(all_profiles)
+        st.rerun()
+    st.stop()
 
-current_profile = st.session_state.profiles[st.session_state.selected_profile]
-profile = current_profile["basic"]
-advanced_qna = current_profile["advanced"]
+user_profile = all_profiles[username]
+profile = user_profile["profile"]
+advanced_qna = user_profile["advanced"]
 
-# ------------------ CV UPLOAD ------------------
+# ------------------ PROFILE EDIT ------------------
+with st.expander("📝 Edit Profile"):
+    profile["name"] = st.text_input("Name", profile["name"])
+    profile["title"] = st.text_input("Job Title", profile["title"])
+    profile["location"] = st.text_input("Location", profile["location"])
+    profile["experience"] = st.text_area("Experience", "\n".join(profile["experience"])).split("\n")
+    profile["skills"] = st.text_area("Technical Skills", ", ".join(profile["skills"])).split(", ")
+    profile["softSkills"] = st.text_area("Soft Skills", ", ".join(profile["softSkills"])).split(", ")
+    profile["learning"] = st.text_area("Currently Learning", ", ".join(profile["learning"])).split(", ")
+    profile["certifications"] = st.text_area("Certifications", ", ".join(profile["certifications"])).split(", ")
+    profile["goals"] = st.text_area("Career Goals", profile["goals"])
+    if st.button("💾 Save Profile"):
+        save_profiles(all_profiles)
+        st.success("Profile saved.")
+
+# ------------------ CV REUPLOAD ------------------
 with st.expander("📄 Upload or Replace CV"):
     uploaded_file = st.file_uploader("Upload your CV (PDF or DOCX)", type=["pdf", "docx"])
     if uploaded_file:
@@ -164,17 +181,17 @@ with st.expander("📄 Upload or Replace CV"):
             for key in ["skills", "softSkills", "learning", "certifications"]:
                 profile[key] = [s.strip() for s in filled.get(key, "").split(",")]
             profile["experience"] = filled.get("experience", [])
-            save_profiles(st.session_state.profiles)
+            save_profiles(all_profiles)
             st.success("CV uploaded and profile updated.")
         else:
             st.error("Could not extract text from this file.")
 
-# ------------------ GET TO KNOW ME ------------------
+# ------------------ ADVANCED Q&A ------------------
 st.markdown("---")
-st.subheader("🧠 Get to Know Me Better")
+st.subheader("🧠 Get to Know Me")
 
 if len(advanced_qna) >= 50:
-    st.warning("You’ve reached the 50-question limit. Please delete previous Q&A before continuing.")
+    st.warning("You’ve reached the 50-question limit. Please delete some before continuing.")
 else:
     if st.button("Start Advanced Q&A"):
         st.session_state.gk_mode = True
@@ -192,28 +209,28 @@ else:
         st.session_state.gk_questions = json.loads(res.choices[0].message.content)
         st.rerun()
 
-if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state.gk_questions):
-    current_q = st.session_state.gk_questions[st.session_state.gk_index]
-    st.write(f"**Q{st.session_state.gk_index + 1}:** {current_q}")
-    user_input = st.text_area("Your answer", height=150, key=f"gk_input_{st.session_state.gk_index}")
-    col1, col2 = st.columns(2)
-    if col1.button("✅ Submit Answer", key="submit_answer"):
-        st.session_state.gk_answers.append({"q": current_q, "a": user_input})
-        st.session_state.gk_index += 1
-        st.rerun()
-    if col2.button("🚪 Exit", key="exit_gk"):
-        st.session_state.gk_mode = False
+if st.session_state.get("gk_mode", False):
+    if st.session_state.gk_index < len(st.session_state.gk_questions):
+        current_q = st.session_state.gk_questions[st.session_state.gk_index]
+        st.write(f"**Q{st.session_state.gk_index + 1}:** {current_q}")
+        user_input = st.text_area("Your answer", height=150, key=f"gk_input_{st.session_state.gk_index}")
+        col1, col2 = st.columns(2)
+        if col1.button("✅ Submit Answer", key="submit_answer"):
+            st.session_state.gk_answers.append({"q": current_q, "a": user_input})
+            st.session_state.gk_index += 1
+            st.rerun()
+        if col2.button("🚪 Exit", key="exit_gk"):
+            st.session_state.gk_mode = False
+            advanced_qna.extend(st.session_state.gk_answers)
+            save_profiles(all_profiles)
+            st.rerun()
+        st.stop()
+    else:
         advanced_qna.extend(st.session_state.gk_answers)
-        save_profiles(st.session_state.profiles)
-        st.rerun()
-    st.stop()
-elif st.session_state.gk_mode:
-    advanced_qna.extend(st.session_state.gk_answers)
-    save_profiles(st.session_state.profiles)
-    st.session_state.gk_mode = False
-    st.success("🎉 All questions answered and saved.")
+        save_profiles(all_profiles)
+        st.session_state.gk_mode = False
+        st.success("🎉 All questions saved.")
 
-# ------------------ ADVANCED Q&A VIEW ------------------
 with st.expander("🔍 View & Manage Advanced Q&A"):
     for i, item in enumerate(advanced_qna):
         st.markdown(f"**Q{i+1}:** {item['q']}")
@@ -221,20 +238,20 @@ with st.expander("🔍 View & Manage Advanced Q&A"):
         col1, col2 = st.columns(2)
         if col1.button(f"💾 Save Q{i+1}", key=f"save_{i}"):
             advanced_qna[i]["a"] = answer
-            save_profiles(st.session_state.profiles)
+            save_profiles(all_profiles)
             st.success(f"Saved Q{i+1}")
         if col2.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
             del advanced_qna[i]
-            save_profiles(st.session_state.profiles)
+            save_profiles(all_profiles)
             st.rerun()
 
-# ------------------ INTERVIEW SIMULATOR ------------------
+# ------------------ INTERVIEW SIMULATION ------------------
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
 question_input = st.text_input("Enter your interview question")
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
-        answer = generate_interview_answer(question_input, current_profile)
+        answer = generate_interview_answer(question_input, user_profile)
         st.markdown("---")
         st.subheader("🗣️ Answer:")
         st.write(answer)

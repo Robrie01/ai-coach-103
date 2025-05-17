@@ -1,1 +1,1 @@
-Includes login, CV upload, profile manager, and advanced Q&A with 50-question limit.
+AI Interview Coach: single profile per user, login required, CV upload optional, advanced Q&A with 50-limit.
