@@ -1,1 +1,1 @@
-Auto-saving, editable Q&A, and fixed profile creation.
+Includes login, CV upload, profile manager, and advanced Q&A with 50-question limit.

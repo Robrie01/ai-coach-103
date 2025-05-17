@@ -1,15 +1,15 @@
 
-# Full integrated version of AI Interview Coach
 import streamlit as st
 import openai
 import json
+import os
 import pathlib
 import datetime
 from fpdf import FPDF
-from io import BytesIO
 import docx2txt
 import PyPDF2
-import os
+
+st.set_page_config(page_title="AI Interview Coach", layout="centered")
 
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
@@ -24,19 +24,16 @@ if "login_attempted" not in st.session_state:
 
 if not st.session_state.authenticated:
     st.title("🔐 Login to Access Roy's AI Interview Coach")
-
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
-
     if submitted:
         if check_login(username, password):
             st.session_state.authenticated = True
             st.rerun()
         else:
             st.session_state.login_attempted = True
-
     if st.session_state.login_attempted:
         st.error("❌ Invalid username or password.")
     st.stop()
@@ -48,14 +45,14 @@ with st.sidebar:
         st.session_state.login_attempted = False
         st.rerun()
 
-# ------------------ SETUP ------------------
+# ------------------ OPENAI SETUP ------------------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def get_default_profile():
     return {
-        "name": "Roy O’Brien",
-        "title": "IT Systems Technician",
-        "location": "Derry, Northern Ireland",
+        "name": "",
+        "title": "",
+        "location": "",
         "experience": [],
         "skills": [],
         "softSkills": [],
@@ -137,11 +134,7 @@ if "gk_answers" not in st.session_state:
 if "gk_index" not in st.session_state:
     st.session_state.gk_index = 0
 
-# ------------------ UI SETUP ------------------
-st.set_page_config(page_title="AI Interview Coach", layout="centered")
-st.title("🧠 Roy's AI Interview Coach")
-
-# Profile Manager
+# ------------------ PROFILE MANAGER ------------------
 st.sidebar.header("👤 Profile Manager")
 profile_names = list(st.session_state.profiles.keys())
 selected = st.sidebar.selectbox("Choose a profile", profile_names)
@@ -156,8 +149,9 @@ if st.sidebar.button("➕ Save New Profile") and new_profile_name:
 
 current_profile = st.session_state.profiles[st.session_state.selected_profile]
 profile = current_profile["basic"]
+advanced_qna = current_profile["advanced"]
 
-# CV Upload
+# ------------------ CV UPLOAD ------------------
 with st.expander("📄 Upload or Replace CV"):
     uploaded_file = st.file_uploader("Upload your CV (PDF or DOCX)", type=["pdf", "docx"])
     if uploaded_file:
@@ -175,41 +169,33 @@ with st.expander("📄 Upload or Replace CV"):
         else:
             st.error("Could not extract text from this file.")
 
-# Edit Profile
-with st.expander("📝 Edit Basic Profile"):
-    profile["name"] = st.text_input("Name", profile["name"])
-    profile["title"] = st.text_input("Job Title", profile["title"])
-    profile["location"] = st.text_input("Location", profile["location"])
-    profile["experience"] = st.text_area("Experience", "\n".join(profile["experience"])).split("\n")
-    profile["skills"] = st.text_area("Technical Skills", ", ".join(profile["skills"])).split(", ")
-    profile["softSkills"] = st.text_area("Soft Skills", ", ".join(profile["softSkills"])).split(", ")
-    profile["learning"] = st.text_area("Currently Learning", ", ".join(profile["learning"])).split(", ")
-    profile["certifications"] = st.text_area("Certifications", ", ".join(profile["certifications"])).split(", ")
-    profile["goals"] = st.text_area("Career Goals", profile["goals"])
-    save_profiles(st.session_state.profiles)
+# ------------------ GET TO KNOW ME ------------------
+st.markdown("---")
+st.subheader("🧠 Get to Know Me Better")
 
-# Get to Know Me
-if st.button("🧠 Get to Know Me Better"):
-    st.session_state.gk_mode = True
-    st.session_state.gk_index = 0
-    st.session_state.gk_answers = []
-    question_prompt = (
-        "Generate 3 insightful and unique questions to learn about someone's "
-        "professional background and personality to improve personalized advice. "
-        "Return them as a JSON list of strings."
-    )
-    res = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": question_prompt}]
-    )
-    st.session_state.gk_questions = json.loads(res.choices[0].message.content)
-    st.rerun()
+if len(advanced_qna) >= 50:
+    st.warning("You’ve reached the 50-question limit. Please delete previous Q&A before continuing.")
+else:
+    if st.button("Start Advanced Q&A"):
+        st.session_state.gk_mode = True
+        st.session_state.gk_index = 0
+        st.session_state.gk_answers = []
+        question_prompt = (
+            "Generate 3 insightful and unique questions to learn about someone's "
+            "professional background and personality to improve personalized advice. "
+            "Return them as a JSON list of strings."
+        )
+        res = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": question_prompt}]
+        )
+        st.session_state.gk_questions = json.loads(res.choices[0].message.content)
+        st.rerun()
 
 if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state.gk_questions):
     current_q = st.session_state.gk_questions[st.session_state.gk_index]
-    st.subheader("🧠 Getting to Know You")
-    st.write(current_q)
-    user_input = st.text_area("Your answer", height=200, key=f"gk_input_{st.session_state.gk_index}")
+    st.write(f"**Q{st.session_state.gk_index + 1}:** {current_q}")
+    user_input = st.text_area("Your answer", height=150, key=f"gk_input_{st.session_state.gk_index}")
     col1, col2 = st.columns(2)
     if col1.button("✅ Submit Answer", key="submit_answer"):
         st.session_state.gk_answers.append({"q": current_q, "a": user_input})
@@ -217,30 +203,32 @@ if st.session_state.gk_mode and st.session_state.gk_index < len(st.session_state
         st.rerun()
     if col2.button("🚪 Exit", key="exit_gk"):
         st.session_state.gk_mode = False
-        current_profile["advanced"].extend(st.session_state.gk_answers)
+        advanced_qna.extend(st.session_state.gk_answers)
         save_profiles(st.session_state.profiles)
         st.rerun()
     st.stop()
 elif st.session_state.gk_mode:
-    current_profile["advanced"].extend(st.session_state.gk_answers)
+    advanced_qna.extend(st.session_state.gk_answers)
     save_profiles(st.session_state.profiles)
     st.session_state.gk_mode = False
     st.success("🎉 All questions answered and saved.")
 
-# Advanced Q&A Edit
-with st.expander("🔍 View Advanced Q&A"):
-    for i, item in enumerate(current_profile["advanced"]):
-        edited = st.text_area(f"Q{i+1}: {item['q']}", value=item["a"], key=f"edit_{i}")
-        if st.button(f"💾 Save Edit Q{i+1}", key=f"save_{i}"):
-            current_profile["advanced"][i]["a"] = edited
+# ------------------ ADVANCED Q&A VIEW ------------------
+with st.expander("🔍 View & Manage Advanced Q&A"):
+    for i, item in enumerate(advanced_qna):
+        st.markdown(f"**Q{i+1}:** {item['q']}")
+        answer = st.text_area("Answer", item["a"], key=f"edit_a_{i}")
+        col1, col2 = st.columns(2)
+        if col1.button(f"💾 Save Q{i+1}", key=f"save_{i}"):
+            advanced_qna[i]["a"] = answer
             save_profiles(st.session_state.profiles)
-            st.success(f"Q{i+1} updated.")
-        if st.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
-            del current_profile["advanced"][i]
+            st.success(f"Saved Q{i+1}")
+        if col2.button(f"🗑️ Delete Q{i+1}", key=f"delete_{i}"):
+            del advanced_qna[i]
             save_profiles(st.session_state.profiles)
             st.rerun()
 
-# Interview
+# ------------------ INTERVIEW SIMULATOR ------------------
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
 question_input = st.text_input("Enter your interview question")
