@@ -73,14 +73,10 @@ def extract_cv_text(uploaded_file):
 
 def autofill_profile_from_cv(cv_text):
     prompt = (
-        "Extract the following as JSON from this CV text: name, job title, location, skills (comma separated), "
-        "soft skills (comma separated), experience (bullet points), certifications, learning focus, and career goals.
-"
-        "CV TEXT:
-" + cv_text
-    )
-" + cv_text
-    )
+    "Extract the following as JSON from this CV text: name, job title, location, skills (comma separated), "
+    "soft skills (comma separated), experience (bullet points), certifications, learning focus, and career goals.\n"
+    "CV TEXT:\n" + cv_text
+)
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
