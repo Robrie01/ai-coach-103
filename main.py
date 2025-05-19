@@ -74,13 +74,16 @@ if not st.session_state.authenticated:
             elif new_username.strip().lower() in st.session_state.profiles:
                 st.error("Username already exists.")
             else:
-                if "pending_signups" not in st.session_state:
-                    st.session_state.pending_signups = []
-                st.session_state.pending_signups.append({
+                all_profiles = st.session_state.profiles
+                if "pending_signups" not in all_profiles:
+                    all_profiles["pending_signups"] = []
+                all_profiles["pending_signups"].append({
                     "email": new_email,
                     "username": new_username.strip().lower(),
                     "password": new_password
                 })
+                save_profiles(all_profiles)
+                st.session_state.profiles = all_profiles
                 st.success("Signup request sent for approval.")
 
     st.stop()
@@ -92,9 +95,9 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-    if st.session_state.username == "admin" and "pending_signups" in st.session_state:
+    if st.session_state.username == "admin" and "pending_signups" in all_profiles:
         with st.expander("🧾 Approve Sign Ups"):
-            for i, req in enumerate(st.session_state.pending_signups):
+            for i, req in enumerate(all_profiles["pending_signups"]):
                 st.write(f"**{req['username']}** ({req['email']})")
                 col1, col2 = st.columns([1, 1])
                 if col1.button(f"✅ Approve {i}"):
@@ -114,7 +117,7 @@ with st.sidebar:
                         "advanced": []
                     }
                     save_profiles(all_profiles)
-                    del st.session_state.pending_signups[i]
+                    del all_profiles["pending_signups"][i]
                     st.rerun()
                 if col2.button(f"❌ Deny {i}"):
                     del st.session_state.pending_signups[i]
@@ -269,7 +272,8 @@ if username not in all_profiles:
                 profile_data["experience"] = filled.get("experience", [])
         all_profiles[username] = {"profile": profile_data, "advanced": []}
         save_profiles(all_profiles)
-        st.rerun()
+                    st.session_state.profiles = all_profiles
+                    st.rerun()
     st.stop()
 
 user_profile = all_profiles[username]
