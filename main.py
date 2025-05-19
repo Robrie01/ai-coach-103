@@ -8,7 +8,7 @@ from fpdf import FPDF
 import docx2txt
 import PyPDF2
 
-st.set_page_config(page_title="AI Interview Coach", layout="centered")
+st.set_page_config(page_title="AI Interview Coach", layout="centered", initial_sidebar_state="expanded")
 
 # ------------------ PROFILE LOADING ------------------
 import requests
@@ -134,6 +134,19 @@ if st.session_state.get("confirm_delete_user"):
     if col2.button("❌ Cancel"):
         del st.session_state["confirm_delete_user"]
         st.rerun()
+
+# ------------------ DARK MODE TOGGLE ------------------
+dark_mode = st.sidebar.toggle("🌙 Dark Mode")
+st.session_state.dark_mode = dark_mode
+if st.session_state.get("dark_mode"):
+    st.markdown("""
+        <style>
+        html, body, [class*="css"] {
+            background-color: #0e1117;
+            color: #f0f0f0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 # ------------------ LOGOUT ------------------
 username = st.session_state.username
