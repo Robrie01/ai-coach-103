@@ -172,11 +172,14 @@ with st.expander("📝 Edit Profile"):
     profile["name"] = st.text_input("Name", profile["name"])
     profile["title"] = st.text_input("Job Title", profile["title"])
     profile["location"] = st.text_input("Location", profile["location"])
-    profile["experience"] = st.text_area("Experience", "\n".join(profile["experience"])).split("\n")
-    profile["skills"] = st.text_area("Technical Skills", ", ".join(profile["skills"])).split(", ")
-    profile["softSkills"] = st.text_area("Soft Skills", ", ".join(profile["softSkills"])).split(", ")
-    profile["learning"] = st.text_area("Currently Learning", ", ".join(profile["learning"])).split(", ")
-    profile["certifications"] = st.text_area("Certifications", ", ".join(profile["certifications"])).split(", ")
+    profile["experience"] = st.text_area(
+        "Experience",
+        "\n".join(str(item) if not isinstance(item, str) else item for item in profile["experience"])
+    ).split("\n")
+    profile["skills"] = st.text_area("Technical Skills", ", ".join(str(item).strip() for item in profile["skills"] if str(item).strip())).split(", ")
+    profile["softSkills"] = st.text_area("Soft Skills", ", ".join(str(item).strip() for item in profile["softSkills"] if str(item).strip())).split(", ")
+    profile["learning"] = st.text_area("Currently Learning", ", ".join(str(item).strip() for item in profile["learning"] if str(item).strip())).split(", ")
+    profile["certifications"] = st.text_area("Certifications", ", ".join(str(item).strip() for item in profile["certifications"] if str(item).strip())).split(", ")
     profile["goals"] = st.text_area("Career Goals", profile["goals"])
     if st.button("💾 Save Profile"):
         save_profiles(all_profiles)
