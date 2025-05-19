@@ -103,7 +103,7 @@ def autofill_profile_from_cv(cv_text):
     trimmed_cv = cleaned_cv[:3000]  # Optional: limit CV text for token safety
 
     prompt = (
-        "I want you to parse the information from my CV into these headers, being very detailed, as a JSON object:\n\n"
+        "You are an expert CV parser. Extract the following structured profile information as a JSON object:\n\n"
         "{\n"
         "  \"name\": string,\n"
         "  \"title\": string,\n"
@@ -134,7 +134,7 @@ def generate_interview_answer(question, profile_bundle):
     system_prompt = (
         "You are simulating interview responses based on this structured profile and CV content:\n"
         f"{json.dumps(full_profile)}\n\n"
-        "Answer the following interview question in a clear, confident, and tailored way."
+        "Answer the following interview question in a clear, friendly, and concise way. Keep the tone approachable and avoid overly formal or robotic phrasing."
     )
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
