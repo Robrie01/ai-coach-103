@@ -23,6 +23,9 @@ if "username" not in st.session_state:
 if "login_attempted" not in st.session_state:
     st.session_state.login_attempted = False
 
+if "profiles" not in st.session_state:
+    st.session_state.profiles = load_profiles()
+
 if not st.session_state.authenticated:
     st.title("🔐 Login to Access AI Interview Coach")
     form_tabs = st.tabs(["Login", "Sign Up"])
