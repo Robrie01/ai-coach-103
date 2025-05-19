@@ -248,7 +248,9 @@ if st.session_state.get("gk_mode", False):
         if col1.button("✅ Submit Answer", key="submit_answer"):
             st.session_state.gk_answers.append({"q": current_q, "a": user_input})
             question_prompt = (
-                "Ask me one insightful, unique question about my professional background. "
+                "Ask me one insightful, unique question about my professional background that hasn't been asked yet. "
+                "Avoid rephrasing or repeating any of the following questions I've already answered: "
+                f"{[q['q'] for q in st.session_state.gk_answers]}. "
                 "Return only a JSON list with one question, like this: [\"Your question here\"]"
             )
             try:
