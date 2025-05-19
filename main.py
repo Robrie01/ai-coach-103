@@ -142,9 +142,9 @@ all_profiles = st.session_state.profiles
 with st.sidebar:
     if all_profiles.get(username, {}).get("is_admin") == True:
         if all_profiles.get(username, {}).get("super_admin"):
-        st.markdown("🛡️ **Super de duper Admin Account**")
+            st.markdown("🛡️ **Super de duper Admin Account**")
         else:
-        st.markdown("🛡️ **Admin Account**")
+            st.markdown("🛡️ **Admin Account**")
 
     if st.button("🚪 Logout"):
         for key in list(st.session_state.keys()):
