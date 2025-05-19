@@ -127,11 +127,6 @@ def autofill_profile_from_cv(cv_text):
     except Exception as e:
         st.error(f"OpenAI CV analysis error: {e}")
         return {}
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return json.loads(response.choices[0].message.content)
 
 def generate_interview_answer(question, profile_bundle):
     full_profile = profile_bundle["profile"]
