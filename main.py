@@ -113,6 +113,7 @@ if not st.session_state.authenticated:
     st.stop()
 
 # ------------------ DELETE CONFIRMATION POPUP ------------------
+all_profiles = st.session_state.profiles
 if st.session_state.get("confirm_delete_user"):
     user_to_delete = st.session_state["confirm_delete_user"]
     st.warning(f"Are you sure you want to delete user: {user_to_delete}?")
