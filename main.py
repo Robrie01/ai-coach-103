@@ -193,6 +193,7 @@ with st.sidebar:
             for user, data in all_profiles.items():
                 if user not in ["pending_signups"] and user != username:
                     user_settings = data.get("settings", {})
+                    is_super_admin = data.get("super_admin", False)
                     col1, col2, col3 = st.columns([2, 1, 1], gap="small")
                     col1.write(f"👤 {user_settings.get('username', user)}")
                     is_admin = data.get("is_admin", False)
@@ -200,7 +201,7 @@ with st.sidebar:
                         all_profiles[user]["is_admin"] = not is_admin
                         save_profiles(all_profiles)
                         st.rerun()
-                    if col3.button(f"❌ Delete {user}", key=f"delete_user_btn_{user}"):
+                    if not is_super_admin and col3.button(f"❌ Delete {user}", key=f"delete_user_btn_{user}"):
                         st.session_state["confirm_delete_user"] = user
                         st.rerun()
                     
