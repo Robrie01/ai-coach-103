@@ -222,32 +222,38 @@ else:
         st.session_state.gk_mode = True
         st.session_state.gk_index = 0
         st.session_state.gk_answers = []
-        question_prompt = (
-            "Generate 3 insightful and unique questions to learn about someone's "
-            "professional background and personality to improve personalized advice. "
-            "Return them as a JSON list of strings."
-        )
+        question_prompt = "Ask me one insightful, unique question at a time to learn more about my professional background and personality. Keep them varied and engaging."
         try:
           res = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": question_prompt}]
           )
-          st.session_state.gk_questions = json.loads(res.choices[0].message.content)
-          st.rerun()
+          st.session_state.gk_questions = [json.loads(res.choices[0].message.content)[0]]
+            st.session_state.gk_index = 0
         except Exception as e:
           st.error(f"OpenAI error: {e}")
           st.stop()
 
 if st.session_state.get("gk_mode", False):
-    if st.session_state.gk_index < len(st.session_state.gk_questions):
+    if len(st.session_state.gk_questions) > 0:
         current_q = st.session_state.gk_questions[st.session_state.gk_index]
         st.write(f"**Q{st.session_state.gk_index + 1}:** {current_q}")
         user_input = st.text_area("Your answer", height=150, key=f"gk_input_{st.session_state.gk_index}")
         col1, col2 = st.columns(2)
         if col1.button("✅ Submit Answer", key="submit_answer"):
             st.session_state.gk_answers.append({"q": current_q, "a": user_input})
-            st.session_state.gk_index += 1
-            st.rerun()
+            question_prompt = "Ask me another insightful, unique question about my background."
+            try:
+                res = openai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": question_prompt}]
+                )
+                new_question = json.loads(res.choices[0].message.content)[0]
+                st.session_state.gk_questions = [new_question]
+                st.rerun()
+            except Exception as e:
+                st.error(f"OpenAI error: {e}")
+                st.stop()
         if col2.button("🚪 Exit", key="exit_gk"):
             st.session_state.gk_mode = False
             advanced_qna.extend(st.session_state.gk_answers)
