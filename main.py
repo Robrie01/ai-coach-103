@@ -264,8 +264,7 @@ if st.session_state.get("gk_mode", False):
                 except Exception as e:
                     st.error(f"OpenAI returned invalid JSON: {e}")
                     st.stop()
-                st.session_state.gk_questions = [new_question]
-                st.rerun()
+                
             except Exception as e:
                 st.error(f"OpenAI error: {e}")
                 st.stop()
