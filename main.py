@@ -50,7 +50,7 @@ def check_login(username, password):
     username = username.strip().lower()
     # Check Gist profiles first
     all_profiles = st.session_state.get("profiles", {})
-    if username in all_profiles and all_profiles[username].get("password") == password:
+    if username in all_profiles and all_profiles[username].get("settings", {}).get("password") == password:
         return True
     # Fallback to secrets
     users = st.secrets.get("users", {})
@@ -134,8 +134,11 @@ with st.sidebar:
                 col1, col2 = st.columns([1, 1])
                 if col1.button(f"✅ Approve {i}"):
                     all_profiles[req["username"]] = {
+                        "settings": {
+                            "username": req["username"],
+                            "password": req["password"]
+                        },
                         "is_admin": False,
-                        "password": req["password"],
                         "profile": {
                             "name": req["username"],
                             "title": "",
