@@ -197,7 +197,7 @@ with st.sidebar:
                     col1, col2, col3 = st.columns([2, 1, 1], gap="small")
                     col1.write(f"👤 {user_settings.get('username', user)}")
                     is_admin = data.get("is_admin", False)
-                    if col2.checkbox("Admin", value=is_admin, key=f"admin_toggle_{user}") != is_admin:
+                    if not is_super_admin and col2.checkbox("Admin", value=is_admin, key=f"admin_toggle_{user}") != is_admin:
                         all_profiles[user]["is_admin"] = not is_admin
                         save_profiles(all_profiles)
                         st.rerun()
