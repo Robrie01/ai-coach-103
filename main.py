@@ -225,10 +225,10 @@ else:
             "Return them as a JSON list of strings."
         )
         try:
-    res = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": question_prompt}]
-    )
+            res = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": question_prompt}]
+            )
 except Exception as e:
     st.error(f"OpenAI error: {e}")
     st.stop()
