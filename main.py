@@ -119,6 +119,10 @@ if st.session_state.get("confirm_delete_user"):
     st.warning(f"Are you sure you want to delete user: {user_to_delete}?")
     col1, col2 = st.columns([1, 1])
     if col1.button("✅ Yes, delete user"):
+    if all_profiles.get(user_to_delete, {}).get("super_admin"):
+        st.error("❌ This user is a super admin and cannot be deleted.")
+        del st.session_state["confirm_delete_user"]
+        st.stop()
         del all_profiles[user_to_delete]
         save_profiles(all_profiles)
         del st.session_state["confirm_delete_user"]
