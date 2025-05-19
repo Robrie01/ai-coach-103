@@ -234,7 +234,7 @@ else:
           try:
             question_list = json.loads(res.choices[0].message.content)
             st.session_state.gk_questions = [question_list[0]]
-          st.session_state.gk_index = 0
+            st.session_state.gk_index = 0
         except Exception as e:
           st.error(f"OpenAI error: {e}")
           st.stop()
