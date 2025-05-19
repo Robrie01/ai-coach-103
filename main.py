@@ -302,7 +302,7 @@ if st.session_state.get("gk_mode", False):
                 st.error(f"OpenAI error: {e}")
                 st.stop()
 
-        if col2.button("🚪 Exit", key="exit_gk"):
+        if col3.button("🚪 Exit", key="exit_gk"):
             st.session_state.gk_mode = False
             advanced_qna.extend(st.session_state.gk_answers)
             save_profiles(all_profiles)
