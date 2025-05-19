@@ -127,40 +127,51 @@ with st.sidebar:
 
     if all_profiles.get(username, {}).get("is_admin") == True:
         with st.expander("🧾 Approve Sign Ups"):
-          pending = all_profiles.get("pending_signups", [])
-          if pending:
-            for i, req in enumerate(pending):
-                st.write(f"**{req['username']}** ({req['email']})")
-                col1, col2 = st.columns([1, 1])
-                if col1.button(f"✅ Approve {i}"):
-                    all_profiles[req["username"]] = {
-                        "settings": {
-                            "username": req["username"],
-                            "password": req["password"]
-                        },
-                        "is_admin": False,
-                        "profile": {
-                            "name": "",
-                            "title": "",
-                            "location": "",
-                            "experience": [],
-                            "skills": [],
-                            "softSkills": [],
-                            "learning": [],
-                            "certifications": [],
-                            "goals": "",
-                            "cvText": ""
-                        },
-                        "advanced": []
-                    }
-                    save_profiles(all_profiles)
-                    del all_profiles["pending_signups"][i]
-                    st.rerun()
-                if col2.button(f"❌ Deny {i}"):
-                    del all_profiles["pending_signups"][i]
-                    st.rerun()
-          else:
-            st.info("No pending signups.")
+            pending = all_profiles.get("pending_signups", [])
+            if pending:
+                for i, req in enumerate(pending):
+                    st.write(f"**{req['username']}** ({req['email']})")
+                    col1, col2 = st.columns([1, 1])
+                    if col1.button(f"✅ Approve {i}"):
+                        all_profiles[req["username"]] = {
+                            "settings": {
+                                "username": req["username"],
+                                "password": req["password"]
+                            },
+                            "is_admin": False,
+                            "profile": {
+                                "name": "",
+                                "title": "",
+                                "location": "",
+                                "experience": [],
+                                "skills": [],
+                                "softSkills": [],
+                                "learning": [],
+                                "certifications": [],
+                                "goals": "",
+                                "cvText": ""
+                            },
+                            "advanced": []
+                        }
+                        save_profiles(all_profiles)
+                        del all_profiles["pending_signups"][i]
+                        st.rerun()
+                    if col2.button(f"❌ Deny {i}"):
+                        del all_profiles["pending_signups"][i]
+                        save_profiles(all_profiles)
+                        st.rerun()
+            else:
+                st.info("No pending signups.")
+
+        with st.expander("🧑‍💼 Manage Users"):
+            for user, data in all_profiles.items():
+                if user not in ["pending_signups"] and user != username:
+                    col1, col2 = st.columns([3, 1])
+                    col1.write(f"👤 {data.get('settings', {}).get('username', user)}")
+                    if col2.button(f"❌ Delete", key=f"delete_user_{user}"):
+                        del all_profiles[user]
+                        save_profiles(all_profiles)
+                        st.rerun()
 
 # ------------------ OPENAI API ------------------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
