@@ -244,7 +244,7 @@ if st.session_state.get("gk_mode", False):
         current_q = st.session_state.gk_questions[st.session_state.gk_index]
         st.write(current_q)
         user_input = st.text_area("Your answer", value="", height=150, key=f"gk_input_{current_q}")
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns([1, 1, 1], gap="small")
         if col1.button("✅ Submit Answer", key="submit_answer"):
             st.session_state.gk_answers.append({"q": current_q, "a": user_input})
             question_prompt = (
