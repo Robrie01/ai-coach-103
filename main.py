@@ -79,6 +79,8 @@ def autofill_profile_from_cv(cv_text):
         "CV TEXT:
 " + cv_text
     )
+" + cv_text
+    )
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
