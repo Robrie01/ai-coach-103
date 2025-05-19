@@ -103,7 +103,7 @@ def autofill_profile_from_cv(cv_text):
     trimmed_cv = cleaned_cv[:3000]  # Optional: limit CV text for token safety
 
     prompt = (
-        "I want you to parse the information from my CV into these headers  as a JSON object:\n\n"
+        "I want you to parse the information from my CV into these headers, being very detailed, as a JSON object:\n\n"
         "{\n"
         "  \"name\": string,\n"
         "  \"title\": string,\n"
