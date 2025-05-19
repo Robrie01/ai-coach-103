@@ -274,6 +274,34 @@ if st.session_state.get("gk_mode", False):
             except Exception as e:
                 st.error(f"OpenAI error: {e}")
                 st.stop()
+        if col2.button("⏭️ Skip", key="skip_gk"):
+            question_prompt = (
+                "Ask me one insightful, unique question about my professional background that hasn't been asked yet. "
+                "Avoid rephrasing or repeating any of the following questions I've already answered: "
+                f"{[q['q'] for q in st.session_state.gk_answers]}. "
+                "Return only a JSON list with one question, like this: [\"Your question here\"]"
+            )
+            try:
+                res = openai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": question_prompt}]
+                )
+                content = res.choices[0].message.content.strip()
+                try:
+                    question_list = json.loads(content)
+                    if isinstance(question_list, list) and question_list:
+                        st.session_state.gk_questions = [question_list[0]]
+                        st.rerun()
+                    else:
+                        st.error("Unexpected format from OpenAI. No question returned.")
+                        st.stop()
+                except Exception as e:
+                    st.error(f"OpenAI returned invalid JSON: {e}")
+                    st.stop()
+            except Exception as e:
+                st.error(f"OpenAI error: {e}")
+                st.stop()
+
         if col2.button("🚪 Exit", key="exit_gk"):
             st.session_state.gk_mode = False
             advanced_qna.extend(st.session_state.gk_answers)
