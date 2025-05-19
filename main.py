@@ -26,6 +26,25 @@ def load_profiles():
         st.warning(f"Could not load profiles from Gist: {e}")
         return {}
 
+def save_profiles(profiles):
+    headers = {
+        "Authorization": f"token {st.secrets['GITHUB_TOKEN']}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    gist_url = f"https://api.github.com/gists/{st.secrets['GIST_ID']}"
+    updated_data = {
+        "files": {
+            "profiles.json": {
+                "content": json.dumps(profiles, indent=2)
+            }
+        }
+    }
+    try:
+        res = requests.patch(gist_url, headers=headers, data=json.dumps(updated_data))
+        res.raise_for_status()
+    except Exception as e:
+        st.error(f"Failed to save profiles to Gist: {e}")
+
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
     users = st.secrets["users"]
