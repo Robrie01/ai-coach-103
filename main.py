@@ -102,8 +102,9 @@ with st.sidebar:
         st.rerun()
 
     if all_profiles.get(username, {}).get("is_admin") == True:
-        with st.expander("🧾 Approve Sign Ups"):
-            pending = all_profiles.get("pending_signups", [])
+    with st.expander("🧾 Approve Sign Ups"):
+        pending = all_profiles.get("pending_signups", [])
+        if pending:
         if pending:
             for i, req in enumerate(pending):
                 st.write(f"**{req['username']}** ({req['email']})")
