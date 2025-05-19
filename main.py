@@ -223,8 +223,9 @@ else:
         st.session_state.gk_index = 0
         st.session_state.gk_answers = []
         question_prompt = (
-            "Ask me one insightful, unique question about my professional background. "
-            "Return only a JSON list with one question, like this: [\"Your question here\"]"
+            "Ask me one highly personal, unique question that helps you deeply understand my character, motivations, challenges, values, or ambitions."
+            " Return only a JSON list with one question, like this: [\"Your question here\"]."
+            " Avoid repeating previous questions or rephrasing the same idea."
         )
         try:
             res = openai.chat.completions.create(
