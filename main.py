@@ -151,7 +151,7 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-    if all_profiles.get(username, {}).get("is_admin") == True:
+    if all_profiles.get(username, {}).get("is_admin") or all_profiles.get(username, {}).get("super_admin"):
         with st.expander("🧾 Approve Sign Ups"):
             pending = all_profiles.get("pending_signups", [])
             if pending:
