@@ -142,7 +142,13 @@ if username not in all_profiles:
                 for key in ["name", "title", "location", "goals"]:
                     profile_data[key] = filled.get(key, profile_data.get(key, ""))
                 for key in ["skills", "softSkills", "learning", "certifications"]:
-                    profile_data[key] = [s.strip() for s in filled.get(key, "").split(",")]
+                    value = filled.get(key, "")
+                    if isinstance(value, list):
+                        profile_data[key] = [s.strip() for s in value]
+                    elif isinstance(value, str):
+                        profile_data[key] = [s.strip() for s in value.split(",")]
+                    else:
+                        profile_data[key] = []
                 profile_data["experience"] = filled.get("experience", [])
         all_profiles[username] = {"profile": profile_data, "advanced": []}
         save_profiles(all_profiles)
