@@ -79,7 +79,6 @@ if not st.session_state.authenticated:
             if check_login(username, password):
                 st.session_state.authenticated = True
                 st.session_state.username = username.strip().lower()
-                save_profiles(all_profiles)
                 st.rerun()
             else:
                 st.session_state.login_attempted = True
@@ -160,9 +159,7 @@ with st.sidebar:
                     st.write(f"**{req['username']}** ({req['email']})")
                     col1, col2 = st.columns([1, 1])
                     if col1.button(f"✅ Approve {i}"):
-                        approved_user = req["username"]
-                        all_profiles["pending_signups"].pop(i)
-                        all_profiles[approved_user] = {
+                        all_profiles[req["username"]] = {
                             "settings": {
                                 "username": req["username"],
                                 "password": req["password"]
