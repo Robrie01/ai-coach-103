@@ -97,7 +97,7 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-    if st.session_state.username == "admin":
+    if all_profiles.get(username, {}).get("is_admin") == True:
         with st.expander("🧾 Approve Sign Ups"):
             pending = all_profiles.get("pending_signups", [])
         if pending:
@@ -106,6 +106,7 @@ with st.sidebar:
                 col1, col2 = st.columns([1, 1])
                 if col1.button(f"✅ Approve {i}"):
                     all_profiles[req["username"]] = {
+                        "is_admin": False,
                         "profile": {
                             "name": req["username"],
                             "title": "",
