@@ -166,6 +166,19 @@ with st.sidebar:
         with st.expander("🧑‍💼 Manage Users"):
             for user, data in all_profiles.items():
                 if user not in ["pending_signups"] and user != username:
+                    user_settings = data.get("settings", {})
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    col1.write(f"👤 {user_settings.get('username', user)}")
+                    is_admin = data.get("is_admin", False)
+                    if col2.checkbox("Admin", value=is_admin, key=f"admin_toggle_{user}") != is_admin:
+                        all_profiles[user]["is_admin"] = not is_admin
+                        save_profiles(all_profiles)
+                        st.rerun()
+                    if col3.checkbox("Confirm Delete", key=f"confirm_delete_{user}"):
+                        if st.button(f"❌ Delete {user}", key=f"delete_user_{user}"):
+                            del all_profiles[user]
+                            save_profiles(all_profiles)
+                            st.rerun()
                     col1, col2 = st.columns([3, 1])
                     col1.write(f"👤 {data.get('settings', {}).get('username', user)}")
                     if col2.button(f"❌ Delete", key=f"delete_user_{user}"):
