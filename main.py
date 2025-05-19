@@ -222,13 +222,18 @@ else:
         st.session_state.gk_mode = True
         st.session_state.gk_index = 0
         st.session_state.gk_answers = []
-        question_prompt = "Ask me one insightful, unique question at a time to learn more about my professional background and personality. Keep them varied and engaging."
+        question_prompt = (
+    "Ask me one insightful, unique question about my professional background. "
+    "Return only a JSON list with one question, like this: [\"Your question here\"]"
+)
         try:
           res = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": question_prompt}]
           )
-          st.session_state.gk_questions = [json.loads(res.choices[0].message.content)[0]]
+          try:
+            question_list = json.loads(res.choices[0].message.content)
+            st.session_state.gk_questions = [question_list[0]]
           st.session_state.gk_index = 0
         except Exception as e:
           st.error(f"OpenAI error: {e}")
