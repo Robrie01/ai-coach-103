@@ -1,4 +1,3 @@
-
 import streamlit as st
 import openai
 import json
@@ -75,9 +74,20 @@ def extract_cv_text(uploaded_file):
 def autofill_profile_from_cv(cv_text):
     prompt = (
         "Extract the following as JSON from this CV text: name, job title, location, skills (comma separated), "
-        "soft skills (comma separated), experience (bullet points), certifications, learning focus, and career goals.\n"
-        "CV TEXT:\n" + cv_text
+        "soft skills (comma separated), experience (bullet points), certifications, learning focus, and career goals.
+"
+        "CV TEXT:
+" + cv_text
     )
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        st.error(f"OpenAI CV analysis error: {e}")
+        return {}
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
@@ -176,6 +186,8 @@ with st.expander("📝 Edit Profile"):
 
 # ------------------ CV REUPLOAD ------------------
 with st.expander("📄 Upload or Replace CV"):
+    if profile.get("cvText"):
+        st.markdown("✅ A CV is already uploaded and stored for this profile.")
     uploaded_file = st.file_uploader("Upload your CV (PDF or DOCX)", type=["pdf", "docx"])
     if uploaded_file:
         cv_text = extract_cv_text(uploaded_file)
@@ -185,14 +197,20 @@ with st.expander("📄 Upload or Replace CV"):
             for key in ["name", "title", "location", "goals"]:
                 profile[key] = filled.get(key, profile.get(key, ""))
             for key in ["skills", "softSkills", "learning", "certifications"]:
-                profile[key] = [s.strip() for s in filled.get(key, "").split(",")]
+                value = filled.get(key, "")
+                if isinstance(value, list):
+                    profile[key] = [s.strip() for s in value]
+                elif isinstance(value, str):
+                    profile[key] = [s.strip() for s in value.split(",")]
+                else:
+                    profile[key] = []
             profile["experience"] = filled.get("experience", [])
             save_profiles(all_profiles)
             st.success("CV uploaded and profile updated.")
         else:
             st.error("Could not extract text from this file.")
 
-# ------------------ ADVANCED Q&A ------------------
+          # ------------------ ADVANCED Q&A ------------------
 st.markdown("---")
 st.subheader("🧠 Get to Know Me")
 
@@ -208,10 +226,14 @@ else:
             "professional background and personality to improve personalized advice. "
             "Return them as a JSON list of strings."
         )
-        res = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": question_prompt}]
-        )
+        try:
+    res = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": question_prompt}]
+    )
+except Exception as e:
+    st.error(f"OpenAI error: {e}")
+    st.stop()
         st.session_state.gk_questions = json.loads(res.choices[0].message.content)
         st.rerun()
 
