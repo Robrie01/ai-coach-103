@@ -136,13 +136,30 @@ if st.session_state.get("confirm_delete_user"):
         st.rerun()
 
 # ------------------ DARK MODE TOGGLE ------------------
-dark_mode = st.sidebar.toggle("🌙 Dark Mode")
-st.session_state.dark_mode = dark_mode
-if st.session_state.get("dark_mode"):
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+
+with st.sidebar:
+    dark_mode_toggle = st.checkbox("🌙 Enable Dark Mode", value=st.session_state.dark_mode)
+    st.session_state.dark_mode = dark_mode_toggle
+
+if st.session_state.dark_mode:
     st.markdown("""
         <style>
-        html, body, [class*="css"] {
+        html, body, .stApp {
             background-color: #0e1117;
+            color: #f0f0f0;
+        }
+        .stTextInput input, .stTextArea textarea {
+            background-color: #262730;
+            color: #f0f0f0;
+        }
+        .stButton>button {
+            background-color: #202231;
+            color: #ffffff;
+        }
+        .stTabs [data-baseweb="tab"] {
+            background-color: #1e1e2f;
             color: #f0f0f0;
         }
         </style>
