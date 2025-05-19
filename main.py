@@ -229,7 +229,7 @@ else:
             messages=[{"role": "user", "content": question_prompt}]
           )
           st.session_state.gk_questions = [json.loads(res.choices[0].message.content)[0]]
-            st.session_state.gk_index = 0
+          st.session_state.gk_index = 0
         except Exception as e:
           st.error(f"OpenAI error: {e}")
           st.stop()
