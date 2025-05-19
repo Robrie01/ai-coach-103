@@ -137,6 +137,9 @@ all_profiles = st.session_state.profiles
 
 with st.sidebar:
     if all_profiles.get(username, {}).get("is_admin") == True:
+        if all_profiles.get(username, {}).get("super_admin"):
+        st.markdown("🛡️ **Super Admin Account**")
+    else:
         st.markdown("🛡️ **Admin Account**")
 
     if st.button("🚪 Logout"):
