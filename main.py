@@ -89,6 +89,7 @@ if not st.session_state.authenticated:
     st.stop()
 
 # ------------------ LOGOUT ------------------
+username = st.session_state.username
 all_profiles = st.session_state.profiles
 
 with st.sidebar:
