@@ -272,8 +272,8 @@ if username not in all_profiles:
                 profile_data["experience"] = filled.get("experience", [])
         all_profiles[username] = {"profile": profile_data, "advanced": []}
         save_profiles(all_profiles)
-                    st.session_state.profiles = all_profiles
-                    st.rerun()
+        st.session_state.profiles = all_profiles
+        st.rerun()
     st.stop()
 
 user_profile = all_profiles[username]
