@@ -53,15 +53,39 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 # ------------------ PROFILE MANAGEMENT ------------------
 PROFILE_STORE = "profiles.json"
 
+import requests
+
 def load_profiles():
-    if pathlib.Path(PROFILE_STORE).exists():
-        with open(PROFILE_STORE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+    headers = {"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}
+    gist_url = f"https://api.github.com/gists/{st.secrets['GIST_ID']}"
+    try:
+        res = requests.get(gist_url, headers=headers)
+        res.raise_for_status()
+        gist_data = res.json()
+        content = gist_data["files"]["profiles.json"]["content"]
+        return json.loads(content)
+    except Exception as e:
+        st.warning(f"Could not load profiles from Gist: {e}")
+        return {}
 
 def save_profiles(profiles):
-    with open(PROFILE_STORE, "w", encoding="utf-8") as f:
-        json.dump(profiles, f, indent=2)
+    headers = {
+        "Authorization": f"token {st.secrets['GITHUB_TOKEN']}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    gist_url = f"https://api.github.com/gists/{st.secrets['GIST_ID']}"
+    updated_data = {
+        "files": {
+            "profiles.json": {
+                "content": json.dumps(profiles, indent=2)
+            }
+        }
+    }
+    try:
+        res = requests.patch(gist_url, headers=headers, data=json.dumps(updated_data))
+        res.raise_for_status()
+    except Exception as e:
+        st.error(f"Failed to save profiles to Gist: {e}")
 
 def extract_cv_text(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
