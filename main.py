@@ -252,7 +252,18 @@ if st.session_state.get("gk_mode", False):
                     model="gpt-3.5-turbo",
                     messages=[{"role": "user", "content": question_prompt}]
                 )
-                new_question = json.loads(res.choices[0].message.content)[0]
+                content = res.choices[0].message.content.strip()
+                try:
+                    question_list = json.loads(content)
+                    if isinstance(question_list, list) and question_list:
+                        st.session_state.gk_questions = [question_list[0]]
+                        st.rerun()
+                    else:
+                        st.error("Unexpected format from OpenAI. No question returned.")
+                        st.stop()
+                except Exception as e:
+                    st.error(f"OpenAI returned invalid JSON: {e}")
+                    st.stop()
                 st.session_state.gk_questions = [new_question]
                 st.rerun()
             except Exception as e:
