@@ -25,19 +25,45 @@ if "login_attempted" not in st.session_state:
 
 if not st.session_state.authenticated:
     st.title("🔐 Login to Access AI Interview Coach")
-    with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-    if submitted:
-        if check_login(username, password):
-            st.session_state.authenticated = True
-            st.session_state.username = username.strip().lower()
-            st.rerun()
-        else:
-            st.session_state.login_attempted = True
-    if st.session_state.login_attempted:
-        st.error("❌ Invalid username or password.")
+    form_tabs = st.tabs(["Login", "Sign Up"])
+
+    with form_tabs[0]:
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Login")
+        if submitted:
+            if check_login(username, password):
+                st.session_state.authenticated = True
+                st.session_state.username = username.strip().lower()
+                st.rerun()
+            else:
+                st.session_state.login_attempted = True
+        if st.session_state.login_attempted:
+            st.error("❌ Invalid username or password.")
+
+    with form_tabs[1]:
+        with st.form("signup_form"):
+            new_email = st.text_input("Email")
+            new_username = st.text_input("Create Username")
+            new_password = st.text_input("Create Password", type="password")
+            confirm_password = st.text_input("Confirm Password", type="password")
+            submitted_signup = st.form_submit_button("Sign Up")
+        if submitted_signup:
+            if new_password != confirm_password:
+                st.error("Passwords do not match.")
+            elif new_username.strip().lower() in st.session_state.profiles:
+                st.error("Username already exists.")
+            else:
+                if "pending_signups" not in st.session_state:
+                    st.session_state.pending_signups = []
+                st.session_state.pending_signups.append({
+                    "email": new_email,
+                    "username": new_username.strip().lower(),
+                    "password": new_password
+                })
+                st.success("Signup request sent for approval.")
+
     st.stop()
 
 # ------------------ LOGOUT ------------------
@@ -46,6 +72,34 @@ with st.sidebar:
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
+
+    if st.session_state.username == "admin" and "pending_signups" in st.session_state:
+        with st.expander("🧾 Approve Sign Ups"):
+            for i, req in enumerate(st.session_state.pending_signups):
+                st.write(f"**{req['username']}** ({req['email']})")
+                col1, col2 = st.columns([1, 1])
+                if col1.button(f"✅ Approve {i}"):
+                    all_profiles[req["username"]] = {
+                        "profile": {
+                            "name": req["username"],
+                            "title": "",
+                            "location": "",
+                            "experience": [],
+                            "skills": [],
+                            "softSkills": [],
+                            "learning": [],
+                            "certifications": [],
+                            "goals": "",
+                            "cvText": ""
+                        },
+                        "advanced": []
+                    }
+                    save_profiles(all_profiles)
+                    del st.session_state.pending_signups[i]
+                    st.rerun()
+                if col2.button(f"❌ Deny {i}"):
+                    del st.session_state.pending_signups[i]
+                    st.rerun()
 
 # ------------------ OPENAI API ------------------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
