@@ -194,12 +194,7 @@ with st.sidebar:
                             del all_profiles[user]
                             save_profiles(all_profiles)
                             st.rerun()
-                    col1, col2 = st.columns([3, 1])
-                    col1.write(f"👤 {data.get('settings', {}).get('username', user)}")
-                    if col2.button(f"❌ Delete", key=f"delete_user_{user}"):
-                        del all_profiles[user]
-                        save_profiles(all_profiles)
-                        st.rerun()
+                    
 
 # ------------------ OPENAI API ------------------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
