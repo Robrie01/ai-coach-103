@@ -189,11 +189,8 @@ with st.sidebar:
                         save_profiles(all_profiles)
                         st.rerun()
                     if col3.button(f"❌ Delete {user}", key=f"delete_user_btn_{user}"):
-                        st.session_state[f"confirm_delete_user"] = user
+                        st.session_state["confirm_delete_user"] = user
                         st.rerun()
-                            del all_profiles[user]
-                            save_profiles(all_profiles)
-                            st.rerun()
                     
 
 # ------------------ OPENAI API ------------------
