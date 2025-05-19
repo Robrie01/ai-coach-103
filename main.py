@@ -89,6 +89,8 @@ if not st.session_state.authenticated:
     st.stop()
 
 # ------------------ LOGOUT ------------------
+all_profiles = st.session_state.profiles
+
 with st.sidebar:
     if st.button("🚪 Logout"):
         for key in list(st.session_state.keys()):
