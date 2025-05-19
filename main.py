@@ -246,7 +246,10 @@ if st.session_state.get("gk_mode", False):
         col1, col2 = st.columns(2)
         if col1.button("✅ Submit Answer", key="submit_answer"):
             st.session_state.gk_answers.append({"q": current_q, "a": user_input})
-            question_prompt = "Ask me another insightful, unique question about my background."
+            question_prompt = (
+                "Ask me one insightful, unique question about my professional background. "
+                "Return only a JSON list with one question, like this: [\"Your question here\"]"
+            )
             try:
                 res = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
