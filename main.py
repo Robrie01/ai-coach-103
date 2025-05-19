@@ -80,7 +80,7 @@ if not st.session_state.authenticated:
                 st.session_state.authenticated = True
                 st.session_state.username = username.strip().lower()
                 save_profiles(all_profiles)
-                        st.rerun()
+                st.rerun()
             else:
                 st.session_state.login_attempted = True
         if st.session_state.login_attempted:
