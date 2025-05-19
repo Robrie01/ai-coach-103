@@ -135,6 +135,7 @@ with st.sidebar:
                 if col1.button(f"✅ Approve {i}"):
                     all_profiles[req["username"]] = {
                         "is_admin": False,
+                        "password": req["password"],
                         "profile": {
                             "name": req["username"],
                             "title": "",
