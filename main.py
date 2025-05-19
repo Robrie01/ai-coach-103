@@ -103,8 +103,8 @@ with st.sidebar:
 
     if all_profiles.get(username, {}).get("is_admin") == True:
         with st.expander("🧾 Approve Sign Ups"):
-        pending = all_profiles.get("pending_signups", [])
-        if pending:
+          pending = all_profiles.get("pending_signups", [])
+          if pending:
             for i, req in enumerate(pending):
                 st.write(f"**{req['username']}** ({req['email']})")
                 col1, col2 = st.columns([1, 1])
@@ -131,6 +131,8 @@ with st.sidebar:
                 if col2.button(f"❌ Deny {i}"):
                     del all_profiles["pending_signups"][i]
                     st.rerun()
+          else:
+            st.info("No pending signups.")
 
 # ------------------ OPENAI API ------------------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
