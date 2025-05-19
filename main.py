@@ -97,9 +97,11 @@ with st.sidebar:
             del st.session_state[key]
         st.rerun()
 
-    if st.session_state.username == "admin" and "pending_signups" in all_profiles:
-        with st.expander("🧾 Approve Sign Ups"):
-            for i, req in enumerate(all_profiles["pending_signups"]):
+    if st.session_state.username == "admin":
+    with st.expander("🧾 Approve Sign Ups"):
+            pending = all_profiles.get("pending_signups", [])
+        if pending:
+            for i, req in enumerate(pending):
                 st.write(f"**{req['username']}** ({req['email']})")
                 col1, col2 = st.columns([1, 1])
                 if col1.button(f"✅ Approve {i}"):
@@ -122,7 +124,7 @@ with st.sidebar:
                     del all_profiles["pending_signups"][i]
                     st.rerun()
                 if col2.button(f"❌ Deny {i}"):
-                    del st.session_state.pending_signups[i]
+                    del all_profiles["pending_signups"][i]
                     st.rerun()
 
 # ------------------ OPENAI API ------------------
