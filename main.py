@@ -112,6 +112,20 @@ if not st.session_state.authenticated:
 
     st.stop()
 
+# ------------------ DELETE CONFIRMATION POPUP ------------------
+if st.session_state.get("confirm_delete_user"):
+    user_to_delete = st.session_state["confirm_delete_user"]
+    st.warning(f"Are you sure you want to delete user: {user_to_delete}?")
+    col1, col2 = st.columns([1, 1])
+    if col1.button("✅ Yes, delete user"):
+        del all_profiles[user_to_delete]
+        save_profiles(all_profiles)
+        del st.session_state["confirm_delete_user"]
+        st.rerun()
+    if col2.button("❌ Cancel"):
+        del st.session_state["confirm_delete_user"]
+        st.rerun()
+
 # ------------------ LOGOUT ------------------
 username = st.session_state.username
 all_profiles = st.session_state.profiles
@@ -167,15 +181,16 @@ with st.sidebar:
             for user, data in all_profiles.items():
                 if user not in ["pending_signups"] and user != username:
                     user_settings = data.get("settings", {})
-                    col1, col2, col3 = st.columns([2, 1, 1])
+                    col1, col2, col3 = st.columns([2, 1, 1], gap="small")
                     col1.write(f"👤 {user_settings.get('username', user)}")
                     is_admin = data.get("is_admin", False)
                     if col2.checkbox("Admin", value=is_admin, key=f"admin_toggle_{user}") != is_admin:
                         all_profiles[user]["is_admin"] = not is_admin
                         save_profiles(all_profiles)
                         st.rerun()
-                    if col3.checkbox("Confirm Delete", key=f"confirm_delete_{user}"):
-                        if st.button(f"❌ Delete {user}", key=f"delete_user_{user}"):
+                    if col3.button(f"❌ Delete {user}", key=f"delete_user_btn_{user}"):
+                        st.session_state[f"confirm_delete_user"] = user
+                        st.rerun()
                             del all_profiles[user]
                             save_profiles(all_profiles)
                             st.rerun()
