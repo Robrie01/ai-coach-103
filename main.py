@@ -98,46 +98,32 @@ def extract_cv_text(uploaded_file):
 def autofill_profile_from_cv(cv_text):
     import re
     # Pre-cleaning: remove excess whitespace, tabs, and bullet characters
-    cleaned_cv = re.sub(r'[•●▪︎◦\-•▪]+', '', cv_text)
-    cleaned_cv = re.sub(r'
-+', '
-', cleaned_cv)
+    cleaned_cv = re.sub(r'[•●▪︎◦\-\u2022\u25AA]+', '', cv_text)
+    cleaned_cv = re.sub(r'\n+', '\n', cleaned_cv)
     trimmed_cv = cleaned_cv[:3000]  # Optional: limit CV text for token safety
 
     prompt = (
-        "You are an expert CV parser. Extract the following structured profile information as a JSON object:
-
-"
-        "{
-"
-        "  \"name\": string,
-"
-        "  \"title\": string,
-"
-        "  \"location\": string,
-"
-        "  \"skills\": [string],
-"
-        "  \"softSkills\": [string],
-"
-        "  \"experience\": [string],
-"
-        "  \"certifications\": [string],
-"
-        "  \"learning\": [string],
-"
-        "  \"goals\": string
-"
-        "}
-
-"
-        "Only return valid JSON. Use bullet points from experience and training sections. Parse the CV text below:
-
-"
+        "You are an expert CV parser. Extract the following structured profile information as a JSON object:\n\n"
+        "{\n"
+        "  \"name\": string,\n"
+        "  \"title\": string,\n"
+        "  \"location\": string,\n"
+        "  \"skills\": [string],\n"
+        "  \"softSkills\": [string],\n"
+        "  \"experience\": [string],\n"
+        "  \"certifications\": [string],\n"
+        "  \"learning\": [string],\n"
+        "  \"goals\": string\n"
+        "}\n\n"
+        "Only return valid JSON. Use bullet points from experience and training sections. Parse the CV text below:\n\n"
         f"{trimmed_cv}"
     )
     try:
-                
+                response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return json.loads(response.choices[0].message.content)
     except Exception as e:
         st.error(f"OpenAI CV analysis error: {e}")
         return {}
