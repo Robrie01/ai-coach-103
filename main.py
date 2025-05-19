@@ -98,7 +98,7 @@ with st.sidebar:
         st.rerun()
 
     if st.session_state.username == "admin":
-    with st.expander("🧾 Approve Sign Ups"):
+        with st.expander("🧾 Approve Sign Ups"):
             pending = all_profiles.get("pending_signups", [])
         if pending:
             for i, req in enumerate(pending):
