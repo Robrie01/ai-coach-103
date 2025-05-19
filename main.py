@@ -10,6 +10,22 @@ import PyPDF2
 
 st.set_page_config(page_title="AI Interview Coach", layout="centered")
 
+# ------------------ PROFILE LOADING ------------------
+import requests
+
+def load_profiles():
+    headers = {"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}
+    gist_url = f"https://api.github.com/gists/{st.secrets['GIST_ID']}"
+    try:
+        res = requests.get(gist_url, headers=headers)
+        res.raise_for_status()
+        gist_data = res.json()
+        content = gist_data["files"]["profiles.json"]["content"]
+        return json.loads(content)
+    except Exception as e:
+        st.warning(f"Could not load profiles from Gist: {e}")
+        return {}
+
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
     users = st.secrets["users"]
