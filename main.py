@@ -47,8 +47,13 @@ def save_profiles(profiles):
 
 # ------------------ LOGIN SYSTEM ------------------
 def check_login(username, password):
-    users = st.secrets["users"]
     username = username.strip().lower()
+    # Check Gist profiles first
+    all_profiles = st.session_state.get("profiles", {})
+    if username in all_profiles and all_profiles[username].get("password") == password:
+        return True
+    # Fallback to secrets
+    users = st.secrets.get("users", {})
     return username in users and password == users[username]
 
 if "authenticated" not in st.session_state:
