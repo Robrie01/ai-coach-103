@@ -140,7 +140,7 @@ with st.sidebar:
                         },
                         "is_admin": False,
                         "profile": {
-                            "name": req["username"],
+                            "name": "",
                             "title": "",
                             "location": "",
                             "experience": [],
