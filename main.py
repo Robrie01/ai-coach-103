@@ -241,7 +241,7 @@ else:
 if st.session_state.get("gk_mode", False):
     if len(st.session_state.gk_questions) > 0:
         current_q = st.session_state.gk_questions[st.session_state.gk_index]
-        st.write(f"**Q{st.session_state.gk_index + 1}:** {current_q}")
+        st.write(current_q)
         user_input = st.text_area("Your answer", height=150, key=f"gk_input_{st.session_state.gk_index}")
         col1, col2 = st.columns(2)
         if col1.button("✅ Submit Answer", key="submit_answer"):
