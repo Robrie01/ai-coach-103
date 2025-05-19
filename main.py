@@ -143,7 +143,7 @@ with st.sidebar:
     if all_profiles.get(username, {}).get("is_admin") == True:
         if all_profiles.get(username, {}).get("super_admin"):
         st.markdown("🛡️ **Super de duper Admin Account**")
-    else:
+        else:
         st.markdown("🛡️ **Admin Account**")
 
     if st.button("🚪 Logout"):
