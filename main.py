@@ -244,7 +244,7 @@ if st.session_state.get("gk_mode", False):
         current_q = st.session_state.gk_questions[st.session_state.gk_index]
         st.write(current_q)
         user_input = st.text_area("Your answer", value="", height=150, key=f"gk_input_{current_q}")
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         if col1.button("✅ Submit Answer", key="submit_answer"):
             st.session_state.gk_answers.append({"q": current_q, "a": user_input})
             question_prompt = (
@@ -274,7 +274,7 @@ if st.session_state.get("gk_mode", False):
             except Exception as e:
                 st.error(f"OpenAI error: {e}")
                 st.stop()
-        if col2.button("⏭️ Skip", key="skip_gk"):
+        if col2.button("⏭️ Skip", key="skip_gk_btn"):
             question_prompt = (
                 "Ask me one insightful, unique question about my professional background that hasn't been asked yet. "
                 "Avoid rephrasing or repeating any of the following questions I've already answered: "
@@ -302,7 +302,7 @@ if st.session_state.get("gk_mode", False):
                 st.error(f"OpenAI error: {e}")
                 st.stop()
 
-        if col2.button("🚪 Exit", key="exit_gk"):
+        if col3.button("🚪 Exit", key="exit_gk"):
             st.session_state.gk_mode = False
             advanced_qna.extend(st.session_state.gk_answers)
             save_profiles(all_profiles)
