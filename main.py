@@ -225,15 +225,15 @@ else:
             "Return them as a JSON list of strings."
         )
         try:
-            res = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": question_prompt}]
-            )
+    res = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": question_prompt}]
+    )
+    st.session_state.gk_questions = json.loads(res.choices[0].message.content)
+    st.rerun()
 except Exception as e:
     st.error(f"OpenAI error: {e}")
     st.stop()
-        st.session_state.gk_questions = json.loads(res.choices[0].message.content)
-        st.rerun()
 
 if st.session_state.get("gk_mode", False):
     if st.session_state.gk_index < len(st.session_state.gk_questions):
