@@ -589,17 +589,18 @@ with st.expander("🔍 View & Manage Advanced Q&A"):
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
 
-job_title_input = st.text_input("Job Title for this interview", key="job_title_input")
-job_desc_input = st.text_area("Job Description", key="job_desc_input")
-job_resp_input = st.text_area("Key Responsibilities", key="job_resp_input")
+with st.expander("Job Role"):
+    job_title_input = st.text_input("Job Title for this interview", key="job_title_input")
+    job_desc_input = st.text_area("Job Description", key="job_desc_input")
+    job_resp_input = st.text_area("Key Responsibilities", key="job_resp_input")
 
 col_q, col_btn = st.columns([3, 1])
-question_input = col_q.text_input("Enter your interview question", key="question_input")
-if col_btn.button("Generate relevant question"):
+if col_btn.button("Generate Question"):
     generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
     if generated_q:
         st.session_state.question_input = generated_q
         st.experimental_rerun()
+question_input = col_q.text_input("Enter your interview question", key="question_input")
 
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
