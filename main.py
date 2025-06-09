@@ -158,6 +158,23 @@ if st.session_state.dark_mode:
             background-color: #1e1e2f;
             color: #f0f0f0;
         }
+        .stSidebar {
+            background-color: #111827;
+        }
+        .stFileUploader, .stFileUploader label {
+            background-color: #262730;
+            color: #f0f0f0;
+        }
+        .streamlit-expanderHeader {
+            background-color: #1e1e2f;
+            color: #f0f0f0;
+        }
+        .streamlit-expanderContent {
+            background-color: #0e1117;
+        }
+        a {
+            color: #58a6ff;
+        }
         </style>
     """, unsafe_allow_html=True)
 
