@@ -347,6 +347,24 @@ def generate_interview_answer(question, profile_bundle):
     )
     return response.choices[0].message.content
 
+def generate_role_question(title, description, responsibilities):
+    prompt = (
+        "You are an experienced interviewer preparing questions for a job candidate. "
+        f"Role: {title}. Description: {description} "
+        f"Responsibilities: {responsibilities}. "
+        "Generate one concise interview question relevant to this position. "
+        "Return only the question text."
+    )
+    try:
+        res = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return res.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI error: {e}")
+        return ""
+
 def save_to_pdf(question, answer):
     pdf = FPDF()
     pdf.add_page()
@@ -570,7 +588,19 @@ with st.expander("🔍 View & Manage Advanced Q&A"):
 # ------------------ INTERVIEW SIMULATION ------------------
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
-question_input = st.text_input("Enter your interview question")
+
+job_title_input = st.text_input("Job Title for this interview", key="job_title_input")
+job_desc_input = st.text_area("Job Description", key="job_desc_input")
+job_resp_input = st.text_area("Key Responsibilities", key="job_resp_input")
+
+col_q, col_btn = st.columns([3, 1])
+question_input = col_q.text_input("Enter your interview question", key="question_input")
+if col_btn.button("Generate relevant question"):
+    generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
+    if generated_q:
+        st.session_state.question_input = generated_q
+        st.experimental_rerun()
+
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
         answer = generate_interview_answer(question_input, user_profile)
