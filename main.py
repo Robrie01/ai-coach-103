@@ -599,7 +599,7 @@ if col_btn.button("Generate Question"):
     generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
     if generated_q:
         st.session_state.question_input = generated_q
-        st.experimental_rerun()
+        st.rerun()
 question_input = col_q.text_input("Enter your interview question", key="question_input")
 
 if st.button("Generate Answer") and question_input:
