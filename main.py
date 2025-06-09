@@ -595,14 +595,18 @@ with st.expander("Job Role"):
     job_resp_input = st.text_area("Key Responsibilities", key="job_resp_input")
 
 col_q, col_btn = st.columns([4, 1])
+if "queued_question" in st.session_state:
+    queued = st.session_state.pop("queued_question")
+else:
+    queued = ""
 with col_q:
-    question_input = st.text_input("Enter your interview question", key="question_input")
+    question_input = st.text_input("Enter your interview question", value=queued, key="question_input")
 with col_btn:
     if st.button("Generate Question"):
-        generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
-        if generated_q:
-            st.session_state.question_input = generated_q
-            st.rerun()
+    generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
+    if generated_q:
+        st.session_state.queued_question = generated_q
+        st.rerun()
 
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
