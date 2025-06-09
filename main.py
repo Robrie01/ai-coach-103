@@ -121,14 +121,10 @@ if st.session_state.get("confirm_delete_user"):
     if col1.button("✅ Yes, delete user"):
         if all_profiles.get(user_to_delete, {}).get("super_admin"):
             st.error("❌ This user is a super admin and cannot be deleted.")
-            del st.session_state["confirm_delete_user"]
-            st.stop()
-    if all_profiles.get(user_to_delete, {}).get("super_admin"):
-        st.error("❌ This user is a super admin and cannot be deleted.")
-        del st.session_state["confirm_delete_user"]
-        st.stop()
-        del all_profiles[user_to_delete]
-        save_profiles(all_profiles)
+        else:
+            del all_profiles[user_to_delete]
+            save_profiles(all_profiles)
+            st.success(f"User {user_to_delete} deleted.")
         del st.session_state["confirm_delete_user"]
         st.rerun()
     if col2.button("❌ Cancel"):
@@ -161,6 +157,23 @@ if st.session_state.dark_mode:
         .stTabs [data-baseweb="tab"] {
             background-color: #1e1e2f;
             color: #f0f0f0;
+        }
+        .stSidebar {
+            background-color: #111827;
+        }
+        .stFileUploader, .stFileUploader label {
+            background-color: #262730;
+            color: #f0f0f0;
+        }
+        .streamlit-expanderHeader {
+            background-color: #1e1e2f;
+            color: #f0f0f0;
+        }
+        .streamlit-expanderContent {
+            background-color: #0e1117;
+        }
+        a {
+            color: #58a6ff;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -333,6 +346,24 @@ def generate_interview_answer(question, profile_bundle):
         ]
     )
     return response.choices[0].message.content
+
+def generate_role_question(title, description, responsibilities):
+    prompt = (
+        "You are an experienced interviewer preparing questions for a job candidate. "
+        f"Role: {title}. Description: {description} "
+        f"Responsibilities: {responsibilities}. "
+        "Generate one concise interview question relevant to this position. "
+        "Return only the question text."
+    )
+    try:
+        res = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return res.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI error: {e}")
+        return ""
 
 def save_to_pdf(question, answer):
     pdf = FPDF()
@@ -557,25 +588,26 @@ with st.expander("🔍 View & Manage Advanced Q&A"):
 # ------------------ INTERVIEW SIMULATION ------------------
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
-question_input = st.text_input("Enter your interview question")
+
+with st.expander("Job Role"):
+    job_title_input = st.text_input("Job Title for this interview", key="job_title_input")
+    job_desc_input = st.text_area("Job Description", key="job_desc_input")
+    job_resp_input = st.text_area("Key Responsibilities", key="job_resp_input")
+
+col_q, col_btn = st.columns([3, 1])
+if col_btn.button("Generate Question"):
+    generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
+    if generated_q:
+        st.session_state.question_input = generated_q
+        st.experimental_rerun()
+question_input = col_q.text_input("Enter your interview question", key="question_input")
+
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
         answer = generate_interview_answer(question_input, user_profile)
         st.markdown("---")
         st.subheader("🗣️ Answer:")
         st.write(answer)
-        col1, col2 = st.columns([1, 1])
-
-        with col1:
-            if st.button("📄 Export as PDF"):
-                filename = save_to_pdf(question_input, answer)
-                st.success(f"Saved as {filename}")
-
-        with col2:
-            if st.button("🔊 Read Answer Aloud"):
-                st.components.v1.html(f"""
-                    <script>
-                    var utterance = new SpeechSynthesisUtterance({json.dumps(answer)});
-                    speechSynthesis.speak(utterance);
-                    </script>
-                """, height=0)
+        if st.button("📄 Export as PDF"):
+            filename = save_to_pdf(question_input, answer)
+            st.success(f"Saved as {filename}")
