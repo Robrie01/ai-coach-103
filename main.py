@@ -1,8 +1,7 @@
 import streamlit as st
 import openai
 import json
-import os
-import pathlib
+
 import datetime
 from fpdf import FPDF
 import docx2txt
@@ -253,41 +252,6 @@ with st.sidebar:
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # ------------------ PROFILE MANAGEMENT ------------------
-PROFILE_STORE = "profiles.json"
-
-import requests
-
-def load_profiles():
-    headers = {"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}
-    gist_url = f"https://api.github.com/gists/{st.secrets['GIST_ID']}"
-    try:
-        res = requests.get(gist_url, headers=headers)
-        res.raise_for_status()
-        gist_data = res.json()
-        content = gist_data["files"]["profiles.json"]["content"]
-        return json.loads(content)
-    except Exception as e:
-        st.warning(f"Could not load profiles from Gist: {e}")
-        return {}
-
-def save_profiles(profiles):
-    headers = {
-        "Authorization": f"token {st.secrets['GITHUB_TOKEN']}",
-        "Accept": "application/vnd.github.v3+json"
-    }
-    gist_url = f"https://api.github.com/gists/{st.secrets['GIST_ID']}"
-    updated_data = {
-        "files": {
-            "profiles.json": {
-                "content": json.dumps(profiles, indent=2)
-            }
-        }
-    }
-    try:
-        res = requests.patch(gist_url, headers=headers, data=json.dumps(updated_data))
-        res.raise_for_status()
-    except Exception as e:
-        st.error(f"Failed to save profiles to Gist: {e}")
 
 def extract_cv_text(uploaded_file):
     if uploaded_file.name.endswith(".pdf"):
@@ -346,6 +310,24 @@ def generate_interview_answer(question, profile_bundle):
         ]
     )
     return response.choices[0].message.content
+
+def generate_role_question(title, description, responsibilities):
+    prompt = (
+        "You are an experienced interviewer preparing questions for a job candidate. "
+        f"Role: {title}. Description: {description} "
+        f"Responsibilities: {responsibilities}. "
+        "Generate one concise interview question relevant to this position. "
+        "Return only the question text."
+    )
+    try:
+        res = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return res.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI error: {e}")
+        return ""
 
 def save_to_pdf(question, answer):
     pdf = FPDF()
@@ -570,7 +552,20 @@ with st.expander("🔍 View & Manage Advanced Q&A"):
 # ------------------ INTERVIEW SIMULATION ------------------
 st.markdown("---")
 st.subheader("💬 Interview Simulator")
-question_input = st.text_input("Enter your interview question")
+
+with st.expander("Job Role"):
+    job_title_input = st.text_input("Job Title for this interview", key="job_title_input")
+    job_desc_input = st.text_area("Job Description", key="job_desc_input")
+    job_resp_input = st.text_area("Key Responsibilities", key="job_resp_input")
+
+col_q, col_btn = st.columns([3, 1])
+if col_btn.button("Generate Question"):
+    generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
+    if generated_q:
+        st.session_state.question_input = generated_q
+        st.experimental_rerun()
+question_input = col_q.text_input("Enter your interview question", key="question_input")
+
 if st.button("Generate Answer") and question_input:
     with st.spinner("Thinking..."):
         answer = generate_interview_answer(question_input, user_profile)
