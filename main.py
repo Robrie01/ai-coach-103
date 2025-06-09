@@ -603,7 +603,7 @@ with col_q:
     question_input = st.text_input("Enter your interview question", value=queued, key="question_input")
 with col_btn:
     if st.button("Generate Question"):
-    generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
+        generated_q = generate_role_question(job_title_input, job_desc_input, job_resp_input)
     if generated_q:
         st.session_state.queued_question = generated_q
         st.rerun()
