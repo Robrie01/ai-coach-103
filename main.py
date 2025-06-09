@@ -8,7 +8,7 @@ from fpdf import FPDF
 import docx2txt
 import PyPDF2
 
-st.set_page_config(page_title="AI Interview Coach", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AI Interview Coach", layout="wide", initial_sidebar_state="expanded")
 
 # ------------------ PROFILE LOADING ------------------
 import requests
@@ -612,6 +612,19 @@ if st.button("Generate Answer") and question_input:
         st.write(question_input)
         st.subheader("🗣️ Answer:")
         st.write(answer)
+        st.markdown("---")
+        st.subheader("🔊 Read Aloud")
+        st.markdown(f"""
+            <script>
+            const utterance = new SpeechSynthesisUtterance({json.dumps(answer)});
+            const button = document.createElement('button');
+            button.textContent = '🔊 Play Answer';
+            button.style.padding = '0.5rem 1rem';
+            button.style.marginTop = '0.5rem';
+            button.onclick = () => window.speechSynthesis.speak(utterance);
+            document.currentScript.parentElement.appendChild(button);
+            </script>
+        """, unsafe_allow_html=True)
         st.markdown("---")
         st.subheader("🗣️ Answer:")
         st.write(answer)
